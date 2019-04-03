@@ -1,6 +1,8 @@
 package glog
 
-import "io"
+import (
+	"io"
+)
 
 type IAppenderFactory interface {
 	NewAppender(builder ILogFactoryBuilder, params map[string]string) IAppender

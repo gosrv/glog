@@ -1,6 +1,9 @@
 package glog
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 type ISharable interface {
 	IsSharable() bool
@@ -34,23 +37,23 @@ type IFieldLogger interface {
 }
 
 type LogParam struct {
-	fixFields map[string]interface{}
-	fields    map[string]interface{}
-	level     Level
+	fields map[string]interface{}
+	level  Level
+	body   string
 }
 
 type logger struct {
 	LogParam
 	FilterBundle
-	appender IAppender
+	appender  IAppender
+	fixFields map[string]interface{}
 }
 
 func NewLogger(fixFields map[string]interface{}, appender IAppender) *logger {
 	return &logger{
-		appender: appender,
-		LogParam: LogParam{
-			fixFields: fixFields,
-		},
+		fixFields: fixFields,
+		appender:  appender,
+		LogParam:  LogParam{},
 	}
 }
 
@@ -116,7 +119,12 @@ func (this *logger) Panic(format string, args ...interface{}) {
 }
 
 func (this *logger) Log(level Level, format string, args ...interface{}) {
-	if this.level < level {
+	this.LogParam.body = fmt.Sprintf(format, args...)
+	for fn, fv := range this.fixFields {
+		this.fields[fn] = fv
+	}
+	this.LogParam.level = level
+	if !this.FilterBundle.IsLogPass(&this.LogParam) {
 		return
 	}
 	this.appender.Write(&this.LogParam)

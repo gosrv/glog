@@ -3,6 +3,7 @@ package glog
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type ILayoutFormatter interface {
@@ -30,6 +31,10 @@ type layoutFormatter struct {
 }
 
 func NewLayoutFormatter(layout string, elementFormatters []IElementFormatter) ILayoutFormatter {
+	if !strings.HasSuffix(layout, "\n") {
+		layout += "\n"
+	}
+
 	return &layoutFormatter{layout: layout, elementFormatters: elementFormatters}
 }
 

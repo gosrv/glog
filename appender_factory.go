@@ -5,13 +5,11 @@ import "os"
 const (
 	AppenderConsole = "console"
 	AppenderFile    = "file"
-
-	ParamLayoutFormatter = "formatter"
-	ParamFileName        = "path"
+	ParamFileName   = "path"
 )
 
 func NewConsoleAppender(builder ILogFactoryBuilder, params map[string]string) IAppender {
-	return NewIOWriterAppender(builder.GetLayoutFormater(params[ParamLayoutFormatter]), os.Stdout)
+	return NewIOWriterAppender(os.Stdout)
 }
 
 func NewFileAppender(builder ILogFactoryBuilder, params map[string]string) IAppender {
@@ -23,7 +21,7 @@ func NewFileAppender(builder ILogFactoryBuilder, params map[string]string) IAppe
 	if err != nil {
 		panic(err)
 	}
-	return NewIOWriterAppender(builder.GetLayoutFormater(params[ParamLayoutFormatter]), file)
+	return NewIOWriterAppender(file)
 }
 
 var AppenderFactories = map[string]IAppenderFactory{

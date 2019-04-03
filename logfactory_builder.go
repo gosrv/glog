@@ -3,20 +3,20 @@ package glog
 import "reflect"
 
 type ConfigAppender struct {
-	params  map[string]string
-	filters map[string]map[string]string
-	layout  string
+	Params  map[string]string
+	Filters map[string]map[string]string
+	Layout  string
 }
 
 type ConfigLogger struct {
-	params    map[string]string
-	filters   map[string]map[string]string
-	appenders []string
+	Params    map[string]string
+	Filters   map[string]map[string]string
+	Appenders []string
 }
 
 type ConfigLogRoot struct {
-	appenders map[string]*ConfigAppender
-	loggers   map[string]*ConfigLogger
+	Appenders map[string]*ConfigAppender
+	Loggers   map[string]*ConfigLogger
 }
 
 type ILogFactoryBuilder interface {
@@ -29,6 +29,8 @@ type ILogFactoryBuilder interface {
 
 	SetFilterFactory(name string, filter IFilterFactory)
 	CreateFilter(name string, cfg map[string]string) IFilter
+
+	Build(cfg *ConfigLogRoot) ILogFactory
 }
 
 type logFactoryBuilder struct {
@@ -41,7 +43,13 @@ type logFactoryBuilder struct {
 }
 
 func NewLogFactoryBuilder() ILogFactoryBuilder {
-	builder := &logFactoryBuilder{}
+	builder := &logFactoryBuilder{
+		layoutParser:           FuncLayoutParser(DefaultLayoutParser),
+		layoutFormatterFactory: FuncLayoutFormatterFactory(NewLayoutFormatter),
+		elementFormaterFactory: ElementFormatterFactories,
+		appenderFactory:        AppenderFactories,
+		filterFactory:          FilterFactories,
+	}
 	return builder
 }
 
@@ -74,13 +82,13 @@ func (this *logFactoryBuilder) SetAppenderFactory(name string, appender IAppende
 }
 
 func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
-	appenders := make(map[string]IAppender, len(cfg.appenders))
-	for appenderName, appenderCfg := range cfg.appenders {
-		appender := this.CreateAppender(appenderName, appenderCfg.params)
-		for filterName, filterParam := range appenderCfg.filters {
+	appenders := make(map[string]IAppender, len(cfg.Appenders))
+	for appenderName, appenderCfg := range cfg.Appenders {
+		appender := this.CreateAppender(appenderName, appenderCfg.Params)
+		for filterName, filterParam := range appenderCfg.Filters {
 			appender.AddFilter(this.CreateFilter(filterName, filterParam))
 		}
-		elements, err := this.layoutParser.LayoutParser(appenderCfg.layout)
+		elements, err := this.layoutParser.LayoutParser(appenderCfg.Layout)
 		if err != nil {
 			panic(err)
 		}
@@ -93,13 +101,14 @@ func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
 		if reflect.TypeOf(appender).AssignableTo(ILayoutFormatterAwareType) {
 			appender.(ILayoutFormatterAware).SetLayoutFormat(layoutFormatter)
 		}
+		appenders[appenderName] = appender
 	}
 
-	loggers := make(map[string]ILogger, len(cfg.loggers))
-	for name, lcfg := range cfg.loggers {
+	loggers := make(map[string]ILogger, len(cfg.Loggers))
+	for name, lcfg := range cfg.Loggers {
 		var firstAppender IAppender
 		var prevAppender IAppender
-		for _, appenderName := range lcfg.appenders {
+		for _, appenderName := range lcfg.Appenders {
 			nextAppender, ok := appenders[appenderName]
 			if !ok {
 				panic("error")
@@ -114,7 +123,7 @@ func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
 		}
 
 		nlog := NewLogger(nil, firstAppender)
-		for filterName, filterParam := range lcfg.filters {
+		for filterName, filterParam := range lcfg.Filters {
 			nlog.AddFilter(this.CreateFilter(filterName, filterParam))
 		}
 		loggers[name] = nlog

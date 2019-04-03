@@ -17,23 +17,26 @@ type IElementFormatterFactory interface {
 }
 type FuncElementFormatterFactory func(param string) IElementFormatter
 
-func (this FuncElementFormatterFactory) NewLayoutFormatter(param string) IElementFormatter {
+func (this FuncElementFormatterFactory) NewElementFormatter(param string) IElementFormatter {
 	return this(param)
 }
 
-type DateTimeElementFormat struct {
+type ElementFormatDateTime struct {
+	layout string
 }
 
-func (this DateTimeElementFormat) ElementFormat(param *LogParam) string {
-	return time.Now().String()
+func NewElementFormatDateTime(layout string) IElementFormatter {
+	return &ElementFormatDateTime{layout: layout}
 }
 
-type ColorElementFormat struct {
+func (this *ElementFormatDateTime) ElementFormat(param *LogParam) string {
+	return time.Now().Format(this.layout)
 }
 
-func (this *ColorElementFormat) ElementFormat(param *LogParam) string {
-	return ""
+func ElementFormatBody(param *LogParam) string {
+	return param.body
 }
 
-type LevelElementFormat struct {
+func ElementFormatLevel(param *LogParam) string {
+	return param.level.String()
 }
