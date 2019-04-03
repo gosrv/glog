@@ -1,14 +1,14 @@
 package glog
 
 type LogConfig struct {
-	appenders map[string] struct{
-		params map[string]string
+	appenders map[string]struct {
+		params  map[string]string
 		filters map[string]map[string]string
-		layout string
+		layout  string
 	}
-	loggers map[string] struct{
-		params map[string]string
-		filters map[string]map[string]string
+	loggers map[string]struct {
+		params    map[string]string
+		filters   map[string]map[string]string
 		appenders []string
 	}
 }
@@ -34,8 +34,8 @@ type ILogFactoryBuilder interface {
 type logFactoryBuilder struct {
 	layoutParsers map[string]ILayoutParser
 	layoutFormats map[string]ILayoutFormatter
-	elements map[string]IElementFormatter
-	appenders  map[string]IAppender
+	elements      map[string]IElementFormatter
+	appenders     map[string]IAppender
 }
 
 func (this *logFactoryBuilder) GetAllLayoutFormaterNames() []string {
@@ -59,7 +59,7 @@ func NewLogFactoryBuilder() ILogFactoryBuilder {
 
 func (this *logFactoryBuilder) GetAllLayoutParserNames() []string {
 	names := make([]string, 0, len(this.layoutParsers))
-	for name,_ := range this.layoutParsers {
+	for name, _ := range this.layoutParsers {
 		names = append(names, name)
 	}
 	return names
@@ -75,7 +75,7 @@ func (this *logFactoryBuilder) GetLayoutParser(name string) ILayoutParser {
 
 func (this *logFactoryBuilder) GetAllElementFormatterNames() []string {
 	names := make([]string, 0, len(this.elements))
-	for name,_ := range this.elements {
+	for name, _ := range this.elements {
 		names = append(names, name)
 	}
 	return names
@@ -91,7 +91,7 @@ func (this *logFactoryBuilder) GetElementFormater(name string) IElementFormatter
 
 func (this *logFactoryBuilder) GetAllAppenderNames() []string {
 	names := make([]string, 0, len(this.appenders))
-	for name,_ := range this.appenders {
+	for name, _ := range this.appenders {
 		names = append(names, name)
 	}
 	return names

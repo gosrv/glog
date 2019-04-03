@@ -7,6 +7,7 @@ import (
 )
 
 type Level uint32
+
 func (level Level) String() string {
 	if b, err := level.MarshalText(); err == nil {
 		return string(b)
@@ -72,8 +73,30 @@ const (
 	PanicLevel Level = 1
 	FatalLevel Level = 2
 	ErrorLevel Level = 3
-	WarnLevel Level = 4
-	InfoLevel Level = 5
+	WarnLevel  Level = 4
+	InfoLevel  Level = 5
 	DebugLevel Level = 6
 	TraceLevel Level = 7
 )
+
+func ParseLevel(lvl string) (Level, error) {
+	switch strings.ToLower(lvl) {
+	case "panic":
+		return PanicLevel, nil
+	case "fatal":
+		return FatalLevel, nil
+	case "error":
+		return ErrorLevel, nil
+	case "warn", "warning":
+		return WarnLevel, nil
+	case "info":
+		return InfoLevel, nil
+	case "debug":
+		return DebugLevel, nil
+	case "trace":
+		return TraceLevel, nil
+	}
+
+	var l Level
+	return l, fmt.Errorf("not a valid Level: %q", lvl)
+}

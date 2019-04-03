@@ -10,7 +10,6 @@ type IElementFormatter interface {
 type FuncElementFormat func(param *LogParam) string
 
 type DateTimeElementFormat struct {
-
 }
 
 func (this DateTimeElementFormat) ElementFormat(param *LogParam) string {
@@ -18,7 +17,6 @@ func (this DateTimeElementFormat) ElementFormat(param *LogParam) string {
 }
 
 type ColorElementFormat struct {
-
 }
 
 func (this *ColorElementFormat) ElementFormat(param *LogParam) string {
@@ -26,5 +24,4 @@ func (this *ColorElementFormat) ElementFormat(param *LogParam) string {
 }
 
 type LevelElementFormat struct {
-
 }

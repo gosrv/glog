@@ -6,6 +6,7 @@ type IAppenderFactory interface {
 	NewAppender(builder ILogFactoryBuilder, params map[string]string) IAppender
 }
 type FuncAppenderFactory func(builder ILogFactoryBuilder, params map[string]string) IAppender
+
 func (this FuncAppenderFactory) NewAppender(builder ILogFactoryBuilder, params map[string]string) IAppender {
 	return this(builder, params)
 }
@@ -14,22 +15,22 @@ func (this FuncAppenderFactory) NewAppender(builder ILogFactoryBuilder, params m
 type IAppender interface {
 	Next(next IAppender)
 	Write(param *LogParam)
-	AddFilter(filter ILogFilter)
+	AddFilter(filter IFilter)
 }
 
 type ChanAppener struct {
 	FilterBundle
 	next IAppender
-	log chan LogParam
+	log  chan LogParam
 }
 
 func NewChanAppener(cap int) *ChanAppener {
 	ins := &ChanAppener{
-		log : make(chan LogParam, cap),
+		log: make(chan LogParam, cap),
 	}
 	go func() {
 		for {
-			data, ok := <- ins.log
+			data, ok := <-ins.log
 			if !ok {
 				break
 			}
@@ -58,7 +59,7 @@ type IOWriterAppender struct {
 
 func NewIOWriterAppender(fmter ILayoutFormatter, writer io.Writer) *IOWriterAppender {
 	return &IOWriterAppender{
-		fmter:fmter,
+		fmter:  fmter,
 		writer: writer,
 	}
 }
@@ -74,4 +75,3 @@ func (this *IOWriterAppender) Write(param *LogParam) {
 		this.next.Write(param)
 	}
 }
-

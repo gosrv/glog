@@ -5,7 +5,7 @@ type ILogFactory interface {
 }
 
 type logFactory struct {
-	loggers  map[string]logger
+	loggers map[string]logger
 }
 
 func NewLogFactory(loggers map[string]logger, elements map[string]IElementFormatter, appenders map[string]IAppender) *logFactory {
@@ -15,4 +15,3 @@ func NewLogFactory(loggers map[string]logger, elements map[string]IElementFormat
 func (this *logFactory) GetLogger(name string) logger {
 	return this.loggers[name]
 }
-

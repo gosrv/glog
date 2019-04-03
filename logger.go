@@ -14,7 +14,7 @@ type ILogger interface {
 type IFieldLogger interface {
 	ILogger
 	IFilterBundle
-	ILogFilter
+	IFilter
 
 	WithField(key string, value interface{}) IFieldLogger
 	WithFields(fields map[string]interface{}) IFieldLogger
@@ -23,8 +23,8 @@ type IFieldLogger interface {
 
 type LogParam struct {
 	fixFields map[string]interface{}
-	fields map[string]interface{}
-	level Level
+	fields    map[string]interface{}
+	level     Level
 }
 
 type logger struct {
@@ -36,10 +36,10 @@ type logger struct {
 
 func NewLogger(fixFields map[string]interface{}, appender IAppender, formatter ILayoutFormatter) *logger {
 	return &logger{
-		appender: appender,
+		appender:  appender,
 		formatter: formatter,
-		LogParam:LogParam{
-			fixFields:fixFields,
+		LogParam: LogParam{
+			fixFields: fixFields,
 		},
 	}
 }
@@ -56,7 +56,7 @@ func (this *logger) WithFields(fields map[string]interface{}) IFieldLogger {
 	if this.fields == nil {
 		this.fields = map[string]interface{}{}
 	}
-	for k,v := range fields {
+	for k, v := range fields {
 		this.fields[k] = v
 	}
 	return this
@@ -64,10 +64,10 @@ func (this *logger) WithFields(fields map[string]interface{}) IFieldLogger {
 
 func (this *logger) CreateLoggerWithFields(fields map[string]interface{}) IFieldLogger {
 	allFields := map[string]interface{}{}
-	for k,v := range fields {
+	for k, v := range fields {
 		allFields[k] = v
 	}
-	for k,v := range this.fixFields {
+	for k, v := range this.fixFields {
 		allFields[k] = v
 	}
 	return NewLogger(allFields, this.appender, this.formatter)

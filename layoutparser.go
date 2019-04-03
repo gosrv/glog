@@ -6,7 +6,7 @@ import (
 
 type LayoutElement struct {
 	Element string
-	Param string
+	Param   string
 }
 
 func NewLayoutElement(element string, param string) *LayoutElement {
@@ -23,7 +23,7 @@ func (this FuncLayoutParser) LayoutParser(layout string) ([]*LayoutElement, erro
 }
 
 func readNextExpectChar(layout string, pos int, limit int, expect byte) int {
-	for i:=pos; i<limit; i++ {
+	for i := pos; i < limit; i++ {
 		if layout[i] == expect {
 			return i
 		}
@@ -33,7 +33,7 @@ func readNextExpectChar(layout string, pos int, limit int, expect byte) int {
 
 func readNextExpectCharNotInQuot(layout string, pos int, expect byte) int {
 	quot := false
-	for i:=pos; i<len(layout); i++ {
+	for i := pos; i < len(layout); i++ {
 		if layout[i] == '"' {
 			quot = !quot
 		}
@@ -47,9 +47,8 @@ func readNextExpectCharNotInQuot(layout string, pos int, expect byte) int {
 	return len(layout)
 }
 
-
 func readSpace(layout string, pos int) int {
-	for i:=pos; i<len(layout); i++ {
+	for i := pos; i < len(layout); i++ {
 		switch layout[i] {
 		case ' ':
 		case '	':
@@ -77,16 +76,16 @@ func DefaultLayoutParser(layout string) ([]*LayoutElement, error) {
 		format = append(format, layout[pos:startPos]...)
 		format = append(format, "%v"...)
 		colonPos := readNextExpectChar(layout, startPos, endPos, ':')
-		element := strings.TrimSpace(layout[startPos+1:colonPos])
+		element := strings.TrimSpace(layout[startPos+1 : colonPos])
 		var value string
 		if colonPos < endPos {
-			value = strings.TrimSpace(layout[colonPos+1:endPos])
-			if len(value) > 0 && value[0] == '"' && value[len(value) - 1] == '"' {
-				value = strings.TrimSpace(value[1:len(value)-1])
+			value = strings.TrimSpace(layout[colonPos+1 : endPos])
+			if len(value) > 0 && value[0] == '"' && value[len(value)-1] == '"' {
+				value = strings.TrimSpace(value[1 : len(value)-1])
 			}
 		}
 		layoutElements = append(layoutElements, NewLayoutElement(element, value))
-		pos = endPos+1
+		pos = endPos + 1
 	}
 
 	layoutElements[0] = NewLayoutElement(string(format), "")

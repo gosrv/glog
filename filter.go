@@ -1,14 +1,22 @@
 package glog
 
-type ILogFilter interface {
+type IFilter interface {
 	IsLogPass(param *LogParam) bool
+}
+type IFilterFactory interface {
+	NewFilter(builder ILogFactoryBuilder, params map[string]string) IFilter
+}
+type FuncFilterFactory func(builder ILogFactoryBuilder, params map[string]string) IFilter
+
+func (this FuncFilterFactory) NewFilter(builder ILogFactoryBuilder, params map[string]string) IFilter {
+	return this(builder, params)
 }
 
 type logLevelLimitFilter struct {
 	minLevel Level
 }
 
-func NewLogLevelLimitFilter(minLevel Level) *logLevelLimitFilter {
+func newLogLevelLimitFilter(minLevel Level) *logLevelLimitFilter {
 	return &logLevelLimitFilter{minLevel: minLevel}
 }
 
@@ -17,16 +25,16 @@ func (this *logLevelLimitFilter) IsLogPass(param *LogParam) bool {
 }
 
 type logLevelPassFilter struct {
-	passLevel []Level
+	passLevel   []Level
 	rejectLevel []Level
 }
 
-func NewLogLevelPassFilter(passLevel []Level, rejectLevel []Level) *logLevelPassFilter {
+func newLogLevelPassFilter(passLevel []Level, rejectLevel []Level) *logLevelPassFilter {
 	return &logLevelPassFilter{passLevel: passLevel, rejectLevel: rejectLevel}
 }
 
 func (this *logLevelPassFilter) IsLogPass(param *LogParam) bool {
-	for _,l := range this.rejectLevel {
+	for _, l := range this.rejectLevel {
 		if l == param.level {
 			return false
 		}
@@ -43,20 +51,20 @@ func (this *logLevelPassFilter) IsLogPass(param *LogParam) bool {
 }
 
 type IFilterBundle interface {
-	AddFilter(filter ILogFilter)
-	RmvFilter(filter ILogFilter)
+	AddFilter(filter IFilter)
+	RmvFilter(filter IFilter)
 }
 
 type FilterBundle struct {
-	filters []ILogFilter
+	filters []IFilter
 }
 
-func (this *FilterBundle)AddFilter(filter ILogFilter)  {
+func (this *FilterBundle) AddFilter(filter IFilter) {
 	this.filters = append(this.filters, filter)
 }
 
-func (this *FilterBundle) RmvFilter(filter ILogFilter) {
-	for i,f := range this.filters {
+func (this *FilterBundle) RmvFilter(filter IFilter) {
+	for i, f := range this.filters {
 		if f == filter {
 			this.filters = append(this.filters[:i], this.filters[i+1:]...)
 			return
