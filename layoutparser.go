@@ -22,6 +22,15 @@ func (this FuncLayoutParser) LayoutParser(layout string) ([]*LayoutElement, erro
 	return this(layout)
 }
 
+type ILayoutParserFactory interface {
+	NewLayoutParser(builder ILogFactoryBuilder, params map[string]string) ILayoutParser
+}
+type FuncLayoutParserFactory func(builder ILogFactoryBuilder, params map[string]string) ILayoutParser
+
+func (this FuncLayoutParserFactory) NewLayoutParser(builder ILogFactoryBuilder, params map[string]string) ILayoutParser {
+	return this(builder, params)
+}
+
 func readNextExpectChar(layout string, pos int, limit int, expect byte) int {
 	for i := pos; i < limit; i++ {
 		if layout[i] == expect {

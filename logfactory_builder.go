@@ -1,110 +1,123 @@
 package glog
 
-type LogConfig struct {
-	appenders map[string]struct {
-		params  map[string]string
-		filters map[string]map[string]string
-		layout  string
-	}
-	loggers map[string]struct {
-		params    map[string]string
-		filters   map[string]map[string]string
-		appenders []string
-	}
+import "reflect"
+
+type ConfigAppender struct {
+	params  map[string]string
+	filters map[string]map[string]string
+	layout  string
+}
+
+type ConfigLogger struct {
+	params    map[string]string
+	filters   map[string]map[string]string
+	appenders []string
+}
+
+type ConfigLogRoot struct {
+	appenders map[string]*ConfigAppender
+	loggers   map[string]*ConfigLogger
 }
 
 type ILogFactoryBuilder interface {
-	GetAllLayoutParserNames() []string
-	SetLayoutParser(name string, layoutParser ILayoutParser)
-	GetLayoutParser(name string) ILayoutParser
+	SetLayoutParser(layoutParser ILayoutParser)
+	SetElementFormatterFactory(name string, formatter IElementFormatterFactory)
+	SetLayoutFormatterFactory(layoutFormatterFactory ILayoutFormatterFactory)
 
-	GetAllElementFormatterNames() []string
-	SetElementFormatter(name string, elementFormatter IElementFormatter)
-	GetElementFormater(name string) IElementFormatter
+	SetAppenderFactory(name string, appender IAppenderFactory)
+	CreateAppender(name string, cfg map[string]string) IAppender
 
-	GetAllAppenderNames() []string
-	SetAppender(name string, appender IAppender)
-	GetAppender(name string) IAppender
-
-	GetAllLayoutFormaterNames() []string
-	GetLayoutFormater(name string) ILayoutFormatter
-	SetLayoutFormater(name string, formatter ILayoutFormatter)
+	SetFilterFactory(name string, filter IFilterFactory)
+	CreateFilter(name string, cfg map[string]string) IFilter
 }
 
 type logFactoryBuilder struct {
-	layoutParsers map[string]ILayoutParser
-	layoutFormats map[string]ILayoutFormatter
-	elements      map[string]IElementFormatter
-	appenders     map[string]IAppender
-}
+	layoutParser           ILayoutParser
+	layoutFormatterFactory ILayoutFormatterFactory
 
-func (this *logFactoryBuilder) GetAllLayoutFormaterNames() []string {
-	panic("implement me")
-}
-
-func (this *logFactoryBuilder) GetLayoutFormater(name string) ILayoutFormatter {
-	panic("implement me")
-}
-
-func (this *logFactoryBuilder) SetLayoutFormater(name string, formatter ILayoutFormatter) {
-	panic("implement me")
+	elementFormaterFactory map[string]IElementFormatterFactory
+	appenderFactory        map[string]IAppenderFactory
+	filterFactory          map[string]IFilterFactory
 }
 
 func NewLogFactoryBuilder() ILogFactoryBuilder {
 	builder := &logFactoryBuilder{}
-	builder.layoutParsers[""] = FuncLayoutParser(DefaultLayoutParser)
-
 	return builder
 }
 
-func (this *logFactoryBuilder) GetAllLayoutParserNames() []string {
-	names := make([]string, 0, len(this.layoutParsers))
-	for name, _ := range this.layoutParsers {
-		names = append(names, name)
+func (this *logFactoryBuilder) SetLayoutParser(layoutParser ILayoutParser) {
+	this.layoutParser = layoutParser
+}
+
+func (this *logFactoryBuilder) SetElementFormatterFactory(name string, formatter IElementFormatterFactory) {
+	this.elementFormaterFactory[name] = formatter
+}
+
+func (this *logFactoryBuilder) SetLayoutFormatterFactory(layoutFormatterFactory ILayoutFormatterFactory) {
+	this.layoutFormatterFactory = layoutFormatterFactory
+}
+
+func (this *logFactoryBuilder) SetFilterFactory(name string, filter IFilterFactory) {
+	this.filterFactory[name] = filter
+}
+
+func (this *logFactoryBuilder) CreateFilter(name string, cfg map[string]string) IFilter {
+	return this.filterFactory[name].NewFilter(this, cfg)
+}
+
+func (this *logFactoryBuilder) CreateAppender(name string, cfg map[string]string) IAppender {
+	return this.appenderFactory[name].NewAppender(this, cfg)
+}
+
+func (this *logFactoryBuilder) SetAppenderFactory(name string, appender IAppenderFactory) {
+	this.appenderFactory[name] = appender
+}
+
+func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
+	appenders := make(map[string]IAppender, len(cfg.appenders))
+	for appenderName, appenderCfg := range cfg.appenders {
+		appender := this.CreateAppender(appenderName, appenderCfg.params)
+		for filterName, filterParam := range appenderCfg.filters {
+			appender.AddFilter(this.CreateFilter(filterName, filterParam))
+		}
+		elements, err := this.layoutParser.LayoutParser(appenderCfg.layout)
+		if err != nil {
+			panic(err)
+		}
+		elementFormaters := make([]IElementFormatter, 0, len(elements)-1)
+		for i := 1; i < len(elements); i++ {
+			ef := this.elementFormaterFactory[elements[i].Element].NewElementFormatter(elements[i].Param)
+			elementFormaters = append(elementFormaters, ef)
+		}
+		layoutFormatter := this.layoutFormatterFactory.NewLayoutFormatter(elements[0].Element, elementFormaters)
+		if reflect.TypeOf(appender).AssignableTo(ILayoutFormatterAwareType) {
+			appender.(ILayoutFormatterAware).SetLayoutFormat(layoutFormatter)
+		}
 	}
-	return names
-}
 
-func (this *logFactoryBuilder) SetLayoutParser(name string, layoutParser ILayoutParser) {
-	this.layoutParsers[name] = layoutParser
-}
+	loggers := make(map[string]ILogger, len(cfg.loggers))
+	for name, lcfg := range cfg.loggers {
+		var firstAppender IAppender
+		var prevAppender IAppender
+		for _, appenderName := range lcfg.appenders {
+			nextAppender, ok := appenders[appenderName]
+			if !ok {
+				panic("error")
+			}
+			if firstAppender == nil {
+				firstAppender = nextAppender
+				prevAppender = nextAppender
+			} else {
+				prevAppender.Next(nextAppender)
+				prevAppender = nextAppender
+			}
+		}
 
-func (this *logFactoryBuilder) GetLayoutParser(name string) ILayoutParser {
-	return this.layoutParsers[name]
-}
-
-func (this *logFactoryBuilder) GetAllElementFormatterNames() []string {
-	names := make([]string, 0, len(this.elements))
-	for name, _ := range this.elements {
-		names = append(names, name)
+		nlog := NewLogger(nil, firstAppender)
+		for filterName, filterParam := range lcfg.filters {
+			nlog.AddFilter(this.CreateFilter(filterName, filterParam))
+		}
+		loggers[name] = nlog
 	}
-	return names
-}
-
-func (this *logFactoryBuilder) SetElementFormatter(name string, elementFormatter IElementFormatter) {
-	this.elements[name] = elementFormatter
-}
-
-func (this *logFactoryBuilder) GetElementFormater(name string) IElementFormatter {
-	return this.elements[name]
-}
-
-func (this *logFactoryBuilder) GetAllAppenderNames() []string {
-	names := make([]string, 0, len(this.appenders))
-	for name, _ := range this.appenders {
-		names = append(names, name)
-	}
-	return names
-}
-
-func (this *logFactoryBuilder) SetAppender(name string, appender IAppender) {
-	this.appenders[name] = appender
-}
-
-func (this *logFactoryBuilder) GetAppender(name string) IAppender {
-	return this.appenders[name]
-}
-
-func (this *logFactoryBuilder) Build(logcfg *LogConfig) ILogFactory {
-
+	return NewLogFactory(loggers)
 }

@@ -3,8 +3,6 @@
   "appenders" : {
     "console" : {
       "params": {
-        "level": "trace",
-        "maxlevel": "info"
       },
       "filters": {
         "level": {"pass": "debug", "reject": "error"}
@@ -13,8 +11,6 @@
     },
     "file" : {
       "params": {
-        "level": "trace",
-        "maxlevel": "error"
       },
       "layout": "{level} {date:yy-MM-dd hh:mm:ss}  {body} {fields:json} {file}:{fileline}"
     }

@@ -57,9 +57,12 @@ type IOWriterAppender struct {
 	writer io.Writer
 }
 
-func NewIOWriterAppender(fmter ILayoutFormatter, writer io.Writer) *IOWriterAppender {
+func (this *IOWriterAppender) SetLayoutFormat(formatter ILayoutFormatter) {
+	this.fmter = formatter
+}
+
+func NewIOWriterAppender(writer io.Writer) *IOWriterAppender {
 	return &IOWriterAppender{
-		fmter:  fmter,
 		writer: writer,
 	}
 }

@@ -1,5 +1,17 @@
 package glog
 
+import "reflect"
+
+type ISharable interface {
+	IsSharable() bool
+}
+
+var ISharableType = reflect.TypeOf((*ISharable)(nil)).Elem()
+
+type ILogComponentInit interface {
+	LogComponentInit(builder ILogFactoryBuilder, params map[string]string) error
+}
+
 type ILogger interface {
 	SetLevel(level Level)
 	Debug(format string, args ...interface{})
@@ -30,14 +42,12 @@ type LogParam struct {
 type logger struct {
 	LogParam
 	FilterBundle
-	appender  IAppender
-	formatter ILayoutFormatter
+	appender IAppender
 }
 
-func NewLogger(fixFields map[string]interface{}, appender IAppender, formatter ILayoutFormatter) *logger {
+func NewLogger(fixFields map[string]interface{}, appender IAppender) *logger {
 	return &logger{
-		appender:  appender,
-		formatter: formatter,
+		appender: appender,
 		LogParam: LogParam{
 			fixFields: fixFields,
 		},
@@ -70,7 +80,7 @@ func (this *logger) CreateLoggerWithFields(fields map[string]interface{}) IField
 	for k, v := range this.fixFields {
 		allFields[k] = v
 	}
-	return NewLogger(allFields, this.appender, this.formatter)
+	return NewLogger(allFields, this.appender)
 }
 
 func (this *logger) SetLevel(level Level) {

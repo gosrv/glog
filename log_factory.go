@@ -1,17 +1,17 @@
 package glog
 
 type ILogFactory interface {
-	GetLogger(name string) logger
+	GetLogger(name string) ILogger
 }
 
 type logFactory struct {
-	loggers map[string]logger
+	loggers map[string]ILogger
 }
 
-func NewLogFactory(loggers map[string]logger, elements map[string]IElementFormatter, appenders map[string]IAppender) *logFactory {
+func NewLogFactory(loggers map[string]ILogger) *logFactory {
 	return &logFactory{loggers: loggers}
 }
 
-func (this *logFactory) GetLogger(name string) logger {
+func (this *logFactory) GetLogger(name string) ILogger {
 	return this.loggers[name]
 }
