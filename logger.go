@@ -16,10 +16,6 @@ type ILogComponentInit interface {
 }
 
 type ILogger interface {
-	WithField(key string, value interface{}) IFieldLogger
-	WithFields(fields LF) IFieldLogger
-	CreateLoggerWithFields(fields LF) IFieldLogger
-
 	Debug(format string, args ...interface{})
 	Info(format string, args ...interface{})
 	Print(format string, args ...interface{})
@@ -33,15 +29,17 @@ type IFieldLogger interface {
 	ILogger
 	IFilterBundle
 	IFilter
+
+	WithField(key string, value interface{}) IFieldLogger
+	WithFields(fields LF) IFieldLogger
 }
 
 type LogParam struct {
-	FixFields []LogField
-	Fields    []LogField
-	LogLevel  Level
-	Body      []byte
-	Prepare   map[string]string
-	LogName   []byte
+	Fields   []LogField
+	LogLevel Level
+	Body     []byte
+	Prepare  map[string]string
+	LogName  []byte
 }
 
 type ILogPrepare interface {
@@ -62,49 +60,35 @@ func NewLogField(key string, val interface{}) LogField {
 }
 
 type logger struct {
-	LogParam
 	FilterBundle
+	fields     []LogField
+	logName    []byte
 	appender   IAppender
 	logPrepare []ILogPrepare
 }
 
-func NewLogger(name []byte, fixFields map[string]interface{},
+func NewLogger(name []byte, fields []LogField,
 	appender IAppender, logPrepare []ILogPrepare) *logger {
-	l := &logger{
-		appender: appender,
-		LogParam: LogParam{
-			Prepare: make(map[string]string),
-			LogName: name,
-		},
+	return &logger{
+		appender:   appender,
+		logName:    name,
 		logPrepare: logPrepare,
+		fields:     fields,
 	}
-	for fn, fe := range fixFields {
-		l.FixFields = append(l.FixFields, NewLogField(fn, fe))
-	}
-	return l
 }
 
 func (this *logger) WithField(key string, value interface{}) IFieldLogger {
-	this.Fields = append(this.Fields, NewLogField(key, value))
-	return this
+	return NewLogger(this.logName, append(this.fields, NewLogField(key, value)),
+		this.appender, this.logPrepare)
 }
 
 func (this *logger) WithFields(fields LF) IFieldLogger {
+	nfields := this.fields
 	for fn, fe := range fields {
-		this.Fields = append(this.Fields, NewLogField(fn, fe))
+		nfields = append(nfields, NewLogField(fn, fe))
 	}
-	return this
-}
-
-func (this *logger) CreateLoggerWithFields(fields LF) IFieldLogger {
-	nfields := make(map[string]interface{}, len(fields)+len(this.FixFields))
-	for _, fe := range this.FixFields {
-		nfields[fe.key] = fe.val
-	}
-	for fn, fe := range fields {
-		nfields[fn] = fe
-	}
-	return NewLogger(this.LogName, nfields, this.appender, this.logPrepare)
+	return NewLogger(this.logName, nfields,
+		this.appender, this.logPrepare)
 }
 
 func (this *logger) Debug(format string, args ...interface{}) {
@@ -136,21 +120,25 @@ func (this *logger) Panic(format string, args ...interface{}) {
 }
 
 func (this *logger) log(level Level, format string, args ...interface{}) {
-	if len(args) == 0 {
-		this.LogParam.Body = []byte(format)
-	} else {
-		this.LogParam.Body = []byte(fmt.Sprintf(format, args...))
+	logParam := LogParam{
+		Fields:   this.fields,
+		LogLevel: level,
+		LogName:  this.logName,
 	}
-	this.LogParam.LogLevel = level
-	if !this.FilterBundle.IsLogPass(&this.LogParam) {
+	if len(args) == 0 {
+		logParam.Body = []byte(format)
+	} else {
+		logParam.Body = []byte(fmt.Sprintf(format, args...))
+	}
+	if !this.FilterBundle.IsLogPass(&logParam) {
 		return
 	}
-	for _, prepare := range this.logPrepare {
-		prepare.LogPrepare(&this.LogParam)
+	if len(this.logPrepare) > 0 {
+		logParam.Prepare = make(map[string]string)
+		for _, prepare := range this.logPrepare {
+			prepare.LogPrepare(&logParam)
+		}
 	}
-	this.appender.Write(&this.LogParam)
-	this.Fields = nil
-	if len(this.LogParam.Prepare) > 0 {
-		this.LogParam.Prepare = make(map[string]string)
-	}
+
+	this.appender.Write(&logParam)
 }

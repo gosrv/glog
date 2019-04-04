@@ -49,7 +49,19 @@ func Test4(t *testing.T) {
 	logger := factory.GetLogger("logger")
 	// 输出go程id 日期时间 日志级别 fields 调用函数，文件行号
 	logger.WithField("name", "eleven").Debug("hello glog")
-	logger.WithFields(glog.LF{"name":"eleven", "age":18}).Info("hello glog")
+	logger.WithFields(glog.LF{"name": "eleven", "age": 18}).Info("hello glog")
+}
+
+func Test5(t *testing.T) {
+	factory, err := glog.LoadLogFactory("glog5.json")
+	if err != nil {
+		panic(err)
+	}
+	logger := factory.GetLogger("logger")
+	// 异步日志，输出到控制台
+	logger.Debug("hello glog")
+	// 必须sleep以后，等待异步日志刷出到控制台
+	time.Sleep(time.Second)
 }
 
 func TestNormal(t *testing.T) {
@@ -60,7 +72,7 @@ func TestNormal(t *testing.T) {
 	loggerDev := factory.GetLogger("loggerdev")
 	loggerPub := factory.GetLogger("loggerpublish")
 	// 开发中使用，输出所有级别到控制台和文件中,文件会每分钟分割一次，可配置
-	for i:=0; i<120; i++ {
+	for i := 0; i < 120; i++ {
 		loggerDev.Debug("hello dev")
 		loggerDev.Info("hello dev")
 		loggerDev.Error("hello dev")
@@ -68,6 +80,6 @@ func TestNormal(t *testing.T) {
 		loggerPub.Debug("hello pub")
 		loggerPub.Info("hello pub")
 		loggerPub.Error("hello pub")
-		time.Sleep(time.Second*2)
+		time.Sleep(time.Second * 2)
 	}
 }

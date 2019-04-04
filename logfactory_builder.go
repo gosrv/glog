@@ -196,7 +196,7 @@ func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) (ILogFactory, error) {
 		return nil, NewComError("build appenders error", err)
 	}
 
-	loggers := make(map[string]ILogger, len(cfg.Loggers))
+	loggers := make(map[string]IFieldLogger, len(cfg.Loggers))
 	for name, lcfg := range cfg.Loggers {
 		var firstAppender IAppender
 		var prevAppender IAppender

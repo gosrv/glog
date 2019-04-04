@@ -3,7 +3,7 @@ package glog
 import (
 	"fmt"
 	"io"
-	"os"
+	"strconv"
 )
 
 const (
@@ -14,7 +14,17 @@ const (
 )
 
 func NewAppenderChan(writers map[string]io.Writer, params map[string]string) (IAppender, error) {
-	return NewIOWriterAppender(os.Stdout), nil
+	pcap, ok := params["cap"]
+	cap := 1024
+	if ok {
+		var err error
+		cap, err = strconv.Atoi(pcap)
+		if err != nil {
+			return nil, fmt.Errorf("new appener chan error, param %v:%v parse error", "cap", pcap)
+		}
+	}
+
+	return NewChanAppener(cap), nil
 }
 
 func NewAppenderWriter(writers map[string]io.Writer, params map[string]string) (IAppender, error) {

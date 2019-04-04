@@ -33,17 +33,14 @@ type layoutFormatter struct {
 
 func NewLayoutFormatter(layout [][]byte, elementFormatters []IElementFormatter) ILayoutFormatter {
 	return &layoutFormatter{
-		cache:             make([]byte, 0, 4096),
 		layout:            layout,
 		elementFormatters: elementFormatters,
 	}
 }
 
 func (this *layoutFormatter) LayoutFormat(param *LogParam) []byte {
-	this.lock.Lock()
-	defer this.lock.Unlock()
 	argLen := len(this.elementFormatters)
-	formated := this.cache
+	formated := make([]byte, 0, 512)
 	formated = append(formated, this.layout[0]...)
 	for i := 0; i < argLen; i++ {
 		arg := this.elementFormatters[i].ElementFormat(param)

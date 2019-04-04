@@ -60,14 +60,7 @@ func ElementFormatLevel(param *LogParam) []byte {
 }
 
 func ElementFormatFields(param *LogParam) []byte {
-	buf := make([]byte, 0, 512)
-	for _, field := range param.FixFields {
-		buf = append(buf, []byte(field.key)...)
-		buf = append(buf, '=')
-		buf = append(buf, []byte(fmt.Sprintf("%v", field.val))...)
-		buf = append(buf, ' ')
-	}
-
+	buf := make([]byte, 0, 128)
 	for _, field := range param.Fields {
 		buf = append(buf, []byte(field.key)...)
 		buf = append(buf, '=')
