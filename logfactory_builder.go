@@ -3,7 +3,6 @@ package glog
 import (
 	"fmt"
 	"io"
-	"reflect"
 )
 
 type ConfigAppender struct {
@@ -173,13 +172,13 @@ func (this *logFactoryBuilder) buildAppenders(cfg map[string]*ConfigAppender, wr
 				return nil, NewComError(fmt.Sprintf("build appender %v failed", appenderName), err)
 			}
 			elementFormaters = append(elementFormaters, ef)
-			if reflect.TypeOf(ef).AssignableTo(ILogPrepareType) {
-				appendCtx.prepareable = append(appendCtx.prepareable, ef.(ILogPrepare))
+			if efPrepare, ok := ef.(ILogPrepare); ok {
+				appendCtx.prepareable = append(appendCtx.prepareable, efPrepare)
 			}
 		}
 		layoutFormatter := this.layoutFormatterFactory.NewLayoutFormatter(format, elementFormaters)
-		if reflect.TypeOf(appendCtx.appender).AssignableTo(ILayoutFormatterAwareType) {
-			appendCtx.appender.(ILayoutFormatterAware).SetLayoutFormat(layoutFormatter)
+		if appenderFormatterAware, ok := appendCtx.appender.(ILayoutFormatterAware); ok {
+			appenderFormatterAware.SetLayoutFormat(layoutFormatter)
 		}
 		appenders[appenderName] = appendCtx
 	}
