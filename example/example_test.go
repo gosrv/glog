@@ -3,34 +3,40 @@ package example
 import (
 	"github.com/gosrv/glog"
 	"testing"
-	"time"
 )
 
-func BenchmarkXX(b *testing.B) {
-	factory, err := glog.AutoLoadLogFactory()
+
+func Test1(t *testing.T) {
+	factory, err := glog.LoadLogFactory("glog1.json")
 	if err != nil {
 		panic(err)
 	}
-
-	logger := factory.GetLogger("testlogger2")
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		logger.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("hello")
-	}
-	b.StopTimer()
+	logger := factory.GetLogger("logger")
+	// 输出到控制台
+	logger.Debug("hello glog")
 }
 
-func TestXX(t *testing.T) {
-	factory, err := glog.AutoLoadLogFactory()
+func Test2(t *testing.T) {
+	factory, err := glog.LoadLogFactory("glog2.json")
 	if err != nil {
 		panic(err)
 	}
-	logger := factory.GetLogger("testlogger1")
-	clog := logger.CreateLoggerWithFields(glog.LF{"name": "eleven"})
-	for {
-		logger.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("hello")
-		clog.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("wrold")
-		time.Sleep(10 * time.Second)
-	}
+	logger := factory.GetLogger("logger")
+	// 输出到控制台和文件
+	logger.Debug("hello glog")
+}
 
+func Test3(t *testing.T) {
+	factory, err := glog.LoadLogFactory("glog3.json")
+	if err != nil {
+		panic(err)
+	}
+	logger1 := factory.GetLogger("logger1")
+	logger2 := factory.GetLogger("logger2")
+	// 只输出info及以上日志
+	logger1.Debug("log1 debug log")
+	logger1.Info("log1 info log")
+	// 只输出debug和info日志
+	logger2.Error("log2 error log")
+	logger2.Info("log2 info log")
 }

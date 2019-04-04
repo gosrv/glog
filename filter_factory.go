@@ -26,13 +26,19 @@ func NewLogLevelLimitFilter(builder ILogFactoryBuilder, params map[string]string
 }
 
 func NewLogLevelPassFilter(builder ILogFactoryBuilder, params map[string]string) (IFilter, error) {
-	passLevelStrs := strings.Split(params[ParamFilterPass], ",")
-	rejectLevelStrs := strings.Split(params[ParamFilterReject], ",")
+	var passLevelStrs []string = nil
+	if len(params[ParamFilterPass]) > 0 {
+		passLevelStrs = strings.Split(params[ParamFilterPass], ",")
+	}
+	var rejectLevelStrs []string = nil
+	if len(params[ParamFilterReject]) > 0 {
+		rejectLevelStrs = strings.Split(params[ParamFilterReject], ",")
+	}
 	var passLevels []Level
 	for _, pl := range passLevelStrs {
 		l, e := ParseLevel(pl)
 		if e != nil {
-			panic(e)
+			return nil, NewComError("new log level pass filter error, parse level error", e)
 		}
 		passLevels = append(passLevels, l)
 	}
@@ -40,7 +46,7 @@ func NewLogLevelPassFilter(builder ILogFactoryBuilder, params map[string]string)
 	for _, pl := range rejectLevelStrs {
 		l, e := ParseLevel(pl)
 		if e != nil {
-			panic(e)
+			return nil, NewComError("new log level pass filter error, parse level error", e)
 		}
 		rejectLevels = append(rejectLevels, l)
 	}

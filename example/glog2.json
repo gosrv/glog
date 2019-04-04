@@ -1,0 +1,32 @@
+{
+  "writers" : {
+    "console":{
+      "writer":"console"
+    },
+    "file":{
+      "writer":"file",
+      "path":"slog/log.log"
+    }
+  },
+  "appenders" : {
+    "logstdout" : {
+      "appender":"writer",
+      "params": {
+        "writer":"console"
+      },
+      "layout": "consolelog {date} {body}"
+    },
+    "logfile" : {
+      "appender":"writer",
+      "params": {
+        "writer":"file"
+      },
+      "layout": "filelog {date} {body}"
+    }
+  },
+  "loggers" : {
+    "logger" : {
+      "appenders": ["logstdout", "logfile"]
+    }
+  }
+}

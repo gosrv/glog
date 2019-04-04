@@ -41,7 +41,7 @@ func (this *ElementFormatDateTime) ElementFormat(param *LogParam) []byte {
 	if len(this.layout) > 0 {
 		return []byte(time.Now().Format(this.layout))
 	} else {
-		data, _ := time.Now().MarshalBinary()
+		data, _ := time.Now().MarshalText()
 		return data
 	}
 }

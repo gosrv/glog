@@ -1,0 +1,30 @@
+{
+  "writers" : {
+    "console":{
+      "writer":"console"
+    }
+  },
+  "appenders" : {
+    "console" : {
+      "appender":"writer",
+      "params": {
+        "writer":"console"
+      },
+      "layout": "{date} {body}"
+    }
+  },
+  "loggers" : {
+    "logger1" : {
+      "filters": {
+        "level.limit": {"level": "info"}
+      },
+      "appenders": ["console"]
+    },
+    "logger2" : {
+      "filters": {
+        "level.pass": {"pass": "debug,info"}
+      },
+      "appenders": ["console"]
+    }
+  }
+}
