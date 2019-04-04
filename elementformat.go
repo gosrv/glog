@@ -1,6 +1,9 @@
 package glog
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // 输出格式化
 type IElementFormatter interface {
@@ -30,7 +33,11 @@ func NewElementFormatDateTime(layout string) IElementFormatter {
 }
 
 func (this *ElementFormatDateTime) ElementFormat(param *LogParam) string {
-	return time.Now().Format(this.layout)
+	if len(this.layout) > 0 {
+		return time.Now().Format(this.layout)
+	} else {
+		return time.Now().String()
+	}
 }
 
 func ElementFormatBody(param *LogParam) string {
@@ -39,4 +46,15 @@ func ElementFormatBody(param *LogParam) string {
 
 func ElementFormatLevel(param *LogParam) string {
 	return param.level.String()
+}
+
+func ElementFormatFields(param *LogParam) string {
+	buf := make([]byte, 0, 512)
+	for _, field := range param.fields {
+		buf = append(buf, []byte(field.key)...)
+		buf = append(buf, ':')
+		buf = append(buf, []byte(fmt.Sprintf("%v", field.val))...)
+		buf = append(buf, ' ')
+	}
+	return string(buf)
 }

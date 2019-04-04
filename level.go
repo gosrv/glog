@@ -1,20 +1,11 @@
 package glog
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
 
 type Level uint32
-
-func (level Level) String() string {
-	if b, err := level.MarshalText(); err == nil {
-		return string(b)
-	} else {
-		return "unknown"
-	}
-}
 
 func ToLevel(lvl string) (Level, error) {
 	switch strings.ToLower(lvl) {
@@ -24,7 +15,7 @@ func ToLevel(lvl string) (Level, error) {
 		return FatalLevel, nil
 	case "error":
 		return ErrorLevel, nil
-	case "warn", "warning":
+	case "warn":
 		return WarnLevel, nil
 	case "info":
 		return InfoLevel, nil
@@ -34,28 +25,66 @@ func ToLevel(lvl string) (Level, error) {
 		return TraceLevel, nil
 	}
 
-	return 0, errors.New(fmt.Sprintf("unknown level %v", lvl))
+	return 0, fmt.Errorf("unknown level %v", lvl)
 }
+
+var btrace = []byte("trace")
+var bdebug = []byte("debug")
+var binfo = []byte("info")
+var bwarn = []byte("warn")
+var berror = []byte("error")
+var bfatal = []byte("fatal")
+var bpanic = []byte("panic")
 
 func (level Level) MarshalText() ([]byte, error) {
 	switch level {
 	case TraceLevel:
-		return []byte("trace"), nil
+		return btrace, nil
 	case DebugLevel:
-		return []byte("debug"), nil
+		return bdebug, nil
 	case InfoLevel:
-		return []byte("info"), nil
+		return binfo, nil
 	case WarnLevel:
-		return []byte("warning"), nil
+		return bwarn, nil
 	case ErrorLevel:
-		return []byte("error"), nil
+		return berror, nil
 	case FatalLevel:
-		return []byte("fatal"), nil
+		return bfatal, nil
 	case PanicLevel:
-		return []byte("panic"), nil
+		return bpanic, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("unknown level %v", level))
+	return nil, fmt.Errorf("unknown level %v", level)
+}
+
+var strace = "trace"
+var sdebug = "debug"
+var sinfo = "info"
+var swarn = "warn"
+var serror = "error"
+var sfatal = "fatal"
+var spanic = "panic"
+var sunknown = "unknown"
+
+func (level Level) String() string {
+	switch level {
+	case TraceLevel:
+		return strace
+	case DebugLevel:
+		return sdebug
+	case InfoLevel:
+		return sinfo
+	case WarnLevel:
+		return swarn
+	case ErrorLevel:
+		return serror
+	case FatalLevel:
+		return sfatal
+	case PanicLevel:
+		return spanic
+	}
+
+	return sunknown
 }
 
 // A constant exposing all logging levels

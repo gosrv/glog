@@ -16,7 +16,10 @@ type ILogComponentInit interface {
 }
 
 type ILogger interface {
-	SetLevel(level Level)
+	WithField(key string, value interface{}) IFieldLogger
+	WithFields(fields LF) IFieldLogger
+	CreateLoggerWithFields(fields LF) IFieldLogger
+
 	Debug(format string, args ...interface{})
 	Info(format string, args ...interface{})
 	Print(format string, args ...interface{})
@@ -30,64 +33,63 @@ type IFieldLogger interface {
 	ILogger
 	IFilterBundle
 	IFilter
-
-	WithField(key string, value interface{}) IFieldLogger
-	WithFields(fields map[string]interface{}) IFieldLogger
-	CreateLoggerWithFields(fields map[string]interface{}) IFieldLogger
 }
 
 type LogParam struct {
-	fields map[string]interface{}
+	fixFields []LogField
+	fields []LogField
 	level  Level
 	body   string
 }
 
+type LogField struct {
+	key string
+	val interface{}
+}
+
+type LF map[string]interface{}
+
+func NewLogField(key string, val interface{}) LogField {
+	return LogField{key: key, val: val}
+}
 type logger struct {
 	LogParam
 	FilterBundle
 	appender  IAppender
-	fixFields map[string]interface{}
 }
 
 func NewLogger(fixFields map[string]interface{}, appender IAppender) *logger {
-	return &logger{
-		fixFields: fixFields,
+	l := &logger{
 		appender:  appender,
 		LogParam:  LogParam{},
 	}
+	for fn, fe := range fixFields {
+		l.fixFields = append(l.fixFields, NewLogField(fn, fe))
+	}
+	return l
 }
 
 func (this *logger) WithField(key string, value interface{}) IFieldLogger {
-	if this.fields == nil {
-		this.fields = map[string]interface{}{}
-	}
-	this.fields[key] = value
+	this.fields = append(this.fields, NewLogField(key, value))
 	return this
 }
 
-func (this *logger) WithFields(fields map[string]interface{}) IFieldLogger {
-	if this.fields == nil {
-		this.fields = map[string]interface{}{}
-	}
-	for k, v := range fields {
-		this.fields[k] = v
+func (this *logger) WithFields(fields LF) IFieldLogger {
+	for fn, fe := range fields {
+		this.fields = append(this.fields, NewLogField(fn, fe))
 	}
 	return this
 }
 
-func (this *logger) CreateLoggerWithFields(fields map[string]interface{}) IFieldLogger {
-	allFields := map[string]interface{}{}
-	for k, v := range fields {
-		allFields[k] = v
+func (this *logger) CreateLoggerWithFields(fields LF) IFieldLogger {
+	nfields := make(map[string]interface{}, len(fields) + len(this.fixFields))
+	for _, fe := range this.fixFields {
+		nfields[fe.key] = fe.val
 	}
-	for k, v := range this.fixFields {
-		allFields[k] = v
+	for fn, fe := range fields {
+		nfields[fn] = fe
 	}
-	return NewLogger(allFields, this.appender)
-}
-
-func (this *logger) SetLevel(level Level) {
-	this.level = level
+	return NewLogger(nfields, this.appender)
 }
 
 func (this *logger) Debug(format string, args ...interface{}) {
@@ -119,9 +121,10 @@ func (this *logger) Panic(format string, args ...interface{}) {
 }
 
 func (this *logger) Log(level Level, format string, args ...interface{}) {
-	this.LogParam.body = fmt.Sprintf(format, args...)
-	for fn, fv := range this.fixFields {
-		this.fields[fn] = fv
+	if len(args) > 0 {
+		this.LogParam.body = format
+	} else {
+		this.LogParam.body = fmt.Sprintf(format, args...)
 	}
 	this.LogParam.level = level
 	if !this.FilterBundle.IsLogPass(&this.LogParam) {

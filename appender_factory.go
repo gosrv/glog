@@ -5,14 +5,19 @@ import "os"
 const (
 	AppenderConsole = "console"
 	AppenderFile    = "file"
+	AppenderDiscard    = "discard"
 	ParamFileName   = "path"
 )
 
-func NewConsoleAppender(builder ILogFactoryBuilder, params map[string]string) IAppender {
+func NewAppenderConsole(builder ILogFactoryBuilder, params map[string]string) IAppender {
 	return NewIOWriterAppender(os.Stdout)
 }
 
-func NewFileAppender(builder ILogFactoryBuilder, params map[string]string) IAppender {
+func NewAppenderDiscard(builder ILogFactoryBuilder, params map[string]string) IAppender {
+	return NewIOWriterAppender(nil)
+}
+
+func NewAppenderFile(builder ILogFactoryBuilder, params map[string]string) IAppender {
 	fname := params[ParamFileName]
 	if len(fname) == 0 {
 		panic("appender has no file name")
@@ -25,6 +30,7 @@ func NewFileAppender(builder ILogFactoryBuilder, params map[string]string) IAppe
 }
 
 var AppenderFactories = map[string]IAppenderFactory{
-	AppenderConsole: FuncAppenderFactory(NewConsoleAppender),
-	AppenderFile:    FuncAppenderFactory(NewFileAppender),
+	AppenderConsole: FuncAppenderFactory(NewAppenderConsole),
+	AppenderFile:    FuncAppenderFactory(NewAppenderFile),
+	AppenderDiscard:    FuncAppenderFactory(NewAppenderDiscard),
 }

@@ -75,7 +75,9 @@ func (this *IOWriterAppender) Next(next IAppender) {
 
 func (this *IOWriterAppender) Write(param *LogParam) {
 	data := this.fmter.LayoutFormat(param)
-	_, _ = this.writer.Write(data)
+	if this.writer != nil {
+		_, _ = this.writer.Write(data)
+	}
 	if this.next != nil {
 		this.next.Write(param)
 	}

@@ -9,13 +9,13 @@ import (
 var cfg = `
 {
   "appenders" : {
-    "console" : {
+    "discard" : {
       "params": {
       },
       "filters": {
         "level.limit": {"level": "debug"}
       },
-      "layout": "{date:2006-01-02 15:04:05} [{level}] {body}"
+      "layout": "{date:2006-01-02 15:04:05} [{level}] {body} {fields}"
     }
   },
   "loggers" : {
@@ -25,11 +25,24 @@ var cfg = `
       "filters": {
         "level.pass": {"pass": "debug", "reject": "error"}
       },
-      "appenders": ["console"]
+      "appenders": ["discard"]
     }
   }
 }
 `
+func BenchmarkXX(b *testing.B) {
+	cfgroot := &glog.ConfigLogRoot{}
+	_ = json.Unmarshal([]byte(cfg), cfgroot)
+
+	builder := glog.NewLogFactoryBuilder()
+	factory := builder.Build(cfgroot)
+	logger := factory.GetLogger("testlogger1")
+	b.StartTimer()
+	for i:=0; i<b.N; i++ {
+		logger.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("hello")
+	}
+	b.StopTimer()
+}
 
 func TestXX(t *testing.T) {
 	cfgroot := &glog.ConfigLogRoot{}
@@ -38,5 +51,6 @@ func TestXX(t *testing.T) {
 	builder := glog.NewLogFactoryBuilder()
 	factory := builder.Build(cfgroot)
 	logger := factory.GetLogger("testlogger1")
-	logger.Debug("hello")
+
+	logger.WithFields(glog.LF{"abc":123,"rrr":666}).Debug("hello")
 }
