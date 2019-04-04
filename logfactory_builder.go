@@ -32,7 +32,7 @@ type ILogFactoryBuilder interface {
 	SetLayoutFormatterFactory(layoutFormatterFactory ILayoutFormatterFactory)
 
 	SetAppenderFactory(name string, appender IAppenderFactory)
-	CreateAppender(name string, writers map[string]io.Writer, cfg map[string]string) IAppender
+	CreateAppender(name string, writers map[string]io.Writer, cfg map[string]string) (IAppender, error)
 
 	SetFilterFactory(name string, filter IFilterFactory)
 	CreateFilter(name string, cfg map[string]string) (IFilter, error)
@@ -110,11 +110,15 @@ func (this *logFactoryBuilder) CreateFilter(name string, cfg map[string]string) 
 	if factory == nil {
 		return nil, fmt.Errorf("create filter %v failed, miss required factory", name)
 	}
-	return factory.NewFilter(this, cfg), nil
+	return factory.NewFilter(this, cfg)
 }
 
-func (this *logFactoryBuilder) CreateAppender(name string, writers map[string]io.Writer, cfg map[string]string) IAppender {
-	return this.appenderFactory[name].NewAppender(writers, cfg)
+func (this *logFactoryBuilder) CreateAppender(name string, writers map[string]io.Writer, cfg map[string]string) (IAppender, error) {
+	factory := this.appenderFactory[name]
+	if factory == nil {
+		return nil, fmt.Errorf("create appender %v failed, miss required factory", name)
+	}
+	return factory.NewAppender(writers, cfg)
 }
 
 func (this *logFactoryBuilder) SetAppenderFactory(name string, appender IAppenderFactory) {
@@ -146,7 +150,11 @@ func (this *logFactoryBuilder) buildAppenders(cfg map[string]*ConfigAppender, wr
 	appenders := make(map[string]*AppenderCtx, len(cfg))
 	for appenderName, appenderCfg := range cfg {
 		appendCtx := &AppenderCtx{}
-		appendCtx.appender = this.CreateAppender(appenderCfg.Appender, writers, appenderCfg.Params)
+		appender, err := this.CreateAppender(appenderCfg.Appender, writers, appenderCfg.Params)
+		if err != nil {
+			return nil, NewComError("build appender error", err)
+		}
+		appendCtx.appender = appender
 		for filterName, filterParam := range appenderCfg.Filters {
 			filter, err := this.CreateFilter(filterName, filterParam)
 			if err != nil {
@@ -154,10 +162,16 @@ func (this *logFactoryBuilder) buildAppenders(cfg map[string]*ConfigAppender, wr
 			}
 			appendCtx.appender.AddFilter(filter)
 		}
-		elements, format := this.layoutParser.LayoutParser([]byte(appenderCfg.Layout))
+		elements, format, err := this.layoutParser.LayoutParser([]byte(appenderCfg.Layout))
+		if err != nil {
+			return nil, NewComError(fmt.Sprintf("build appender %v failed, layout parse error", appenderName), err)
+		}
 		elementFormaters := make([]IElementFormatter, 0, len(elements))
 		for i := 0; i < len(elements); i++ {
-			ef := this.elementFormaterFactory[string(elements[i].Element)].NewElementFormatter(string(elements[i].Param))
+			ef, err := this.elementFormaterFactory[string(elements[i].Element)].NewElementFormatter(string(elements[i].Param))
+			if err != nil {
+				return nil, NewComError(fmt.Sprintf("build appender %v failed", appenderName), err)
+			}
 			elementFormaters = append(elementFormaters, ef)
 			if reflect.TypeOf(ef).AssignableTo(ILogPrepareType) {
 				appendCtx.prepareable = append(appendCtx.prepareable, ef.(ILogPrepare))

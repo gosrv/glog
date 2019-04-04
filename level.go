@@ -25,7 +25,7 @@ func ToLevel(lvl string) (Level, error) {
 		return TraceLevel, nil
 	}
 
-	return 0, fmt.Errorf("unknown LogLevel %v", lvl)
+	return 0, fmt.Errorf("unknown level %v", lvl)
 }
 
 var btrace = []byte("trace")
@@ -54,7 +54,7 @@ func (level Level) MarshalText() ([]byte, error) {
 		return bpanic, nil
 	}
 
-	return nil, fmt.Errorf("unknown LogLevel %v", level)
+	return nil, fmt.Errorf("unknown level %v", level)
 }
 
 var strace = "trace"
@@ -87,7 +87,6 @@ func (level Level) String() string {
 	return sunknown
 }
 
-// A constant exposing all logging levels
 var AllLevels = []Level{
 	PanicLevel,
 	FatalLevel,

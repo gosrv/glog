@@ -1,6 +1,9 @@
 package glog
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 const (
 	FilterLevelLimit  = "level.limit"
@@ -10,15 +13,19 @@ const (
 	ParamFilterReject = "reject"
 )
 
-func NewLogLevelLimitFilter(builder ILogFactoryBuilder, params map[string]string) IFilter {
-	level, err := ParseLevel(params[ParamFilterLevel])
-	if err != nil {
-		panic(err)
+func NewLogLevelLimitFilter(builder ILogFactoryBuilder, params map[string]string) (IFilter, error) {
+	plevel, ok := params[ParamFilterLevel]
+	if !ok || len(plevel) == 0 {
+		return nil, fmt.Errorf("new log level limit error, miss required param %v", ParamFilterLevel)
 	}
-	return newLogLevelLimitFilter(level)
+	level, err := ParseLevel(plevel)
+	if err != nil {
+		return nil, NewComError("new log level limit error, parse level error", err)
+	}
+	return newLogLevelLimitFilter(level), nil
 }
 
-func NewLogLevelPassFilter(builder ILogFactoryBuilder, params map[string]string) IFilter {
+func NewLogLevelPassFilter(builder ILogFactoryBuilder, params map[string]string) (IFilter, error) {
 	passLevelStrs := strings.Split(params[ParamFilterPass], ",")
 	rejectLevelStrs := strings.Split(params[ParamFilterReject], ",")
 	var passLevels []Level
@@ -37,7 +44,7 @@ func NewLogLevelPassFilter(builder ILogFactoryBuilder, params map[string]string)
 		}
 		rejectLevels = append(rejectLevels, l)
 	}
-	return newLogLevelPassFilter(passLevels, rejectLevels)
+	return newLogLevelPassFilter(passLevels, rejectLevels), nil
 }
 
 var FilterFactories = map[string]IFilterFactory{

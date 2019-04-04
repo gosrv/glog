@@ -2,6 +2,7 @@ package glog
 
 import (
 	"bytes"
+	"fmt"
 )
 
 type LayoutElement struct {
@@ -14,11 +15,11 @@ func NewLayoutElement(element []byte, param []byte) *LayoutElement {
 }
 
 type ILayoutParser interface {
-	LayoutParser(layout []byte) ([]*LayoutElement, [][]byte)
+	LayoutParser(layout []byte) ([]*LayoutElement, [][]byte, error)
 }
-type FuncLayoutParser func(layout []byte) ([]*LayoutElement, [][]byte)
+type FuncLayoutParser func(layout []byte) ([]*LayoutElement, [][]byte, error)
 
-func (this FuncLayoutParser) LayoutParser(layout []byte) ([]*LayoutElement, [][]byte) {
+func (this FuncLayoutParser) LayoutParser(layout []byte) ([]*LayoutElement, [][]byte, error) {
 	return this(layout)
 }
 
@@ -59,7 +60,7 @@ func readSpace(layout []byte, pos int) int {
 	return len(layout)
 }
 
-func DefaultLayoutParser(layout []byte) ([]*LayoutElement, [][]byte) {
+func DefaultLayoutParser(layout []byte) ([]*LayoutElement, [][]byte, error) {
 	pos := 0
 	llen := len(layout)
 	format := make([][]byte, 0, llen)
@@ -70,6 +71,9 @@ func DefaultLayoutParser(layout []byte) ([]*LayoutElement, [][]byte) {
 		startPos := readNextExpectChar(layout, pos, len(layout), '{')
 		// 读取结束符
 		endPos := readNextExpectCharNotInQuot(layout, startPos+1, '}')
+		if endPos == llen && startPos != llen {
+			return nil, nil, fmt.Errorf("layout format error mismatch {} at %v->%v", startPos, endPos)
+		}
 		// 之前的加入format
 		if startPos == endPos {
 			format = append(format, append(layout[pos:startPos], '\n'))
@@ -90,5 +94,5 @@ func DefaultLayoutParser(layout []byte) ([]*LayoutElement, [][]byte) {
 		pos = endPos + 1
 	}
 
-	return layoutElements, format
+	return layoutElements, format, nil
 }

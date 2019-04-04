@@ -12,23 +12,23 @@ const (
 	ElementLogger = "logger"
 )
 
-func NewElememtBody(param string) IElementFormatter {
-	return FuncElementFormat(ElementFormatBody)
+func NewElememtBody(param string) (IElementFormatter, error) {
+	return FuncElementFormat(ElementFormatBody), nil
 }
 
-func NewElememtDate(param string) IElementFormatter {
-	return NewElementFormatDateTime(param)
+func NewElememtDate(param string) (IElementFormatter, error) {
+	return NewElementFormatDateTime(param), nil
 }
 
-func NewElememtLevel(param string) IElementFormatter {
-	return FuncElementFormat(ElementFormatLevel)
+func NewElememtLevel(param string) (IElementFormatter, error) {
+	return FuncElementFormat(ElementFormatLevel), nil
 }
 
-func NewElementFields(param string) IElementFormatter {
-	return FuncElementFormat(ElementFormatFields)
+func NewElementFields(param string) (IElementFormatter, error) {
+	return FuncElementFormat(ElementFormatFields), nil
 }
 
-func NewElementFile(param string) IElementFormatter {
+func NewElementFile(param string) (IElementFormatter, error) {
 	sp := strings.Split(param, ",")
 	sep := ":"
 	short := true
@@ -39,15 +39,15 @@ func NewElementFile(param string) IElementFormatter {
 		sep = sp[0]
 		short = sp[1] == "short"
 	}
-	return NewElementFormatFile(sep, short)
+	return NewElementFormatFile(sep, short), nil
 }
 
-func NewElementGOID(param string) IElementFormatter {
-	return FuncElementFormat(ElementFormatGOID)
+func NewElementGOID(param string) (IElementFormatter, error) {
+	return FuncElementFormat(ElementFormatGOID), nil
 }
 
-func NewElementLogger(param string) IElementFormatter {
-	return FuncElementFormat(ElementFormatLogger)
+func NewElementLogger(param string) (IElementFormatter, error) {
+	return FuncElementFormat(ElementFormatLogger), nil
 }
 
 var ElementFormatterFactories = map[string]IElementFormatterFactory{

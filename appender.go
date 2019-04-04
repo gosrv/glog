@@ -5,11 +5,11 @@ import (
 )
 
 type IAppenderFactory interface {
-	NewAppender(writers map[string]io.Writer, params map[string]string) IAppender
+	NewAppender(writers map[string]io.Writer, params map[string]string) (IAppender, error)
 }
-type FuncAppenderFactory func(writers map[string]io.Writer, params map[string]string) IAppender
+type FuncAppenderFactory func(writers map[string]io.Writer, params map[string]string) (IAppender, error)
 
-func (this FuncAppenderFactory) NewAppender(writers map[string]io.Writer, params map[string]string) IAppender {
+func (this FuncAppenderFactory) NewAppender(writers map[string]io.Writer, params map[string]string) (IAppender, error) {
 	return this(writers, params)
 }
 
@@ -26,7 +26,7 @@ type ChanAppener struct {
 	log  chan LogParam
 }
 
-func NewChanAppener(cap int) *ChanAppener {
+func NewChanAppener(cap int) IAppender {
 	ins := &ChanAppener{
 		log: make(chan LogParam, cap),
 	}
@@ -63,7 +63,7 @@ func (this *IOWriterAppender) SetLayoutFormat(formatter ILayoutFormatter) {
 	this.fmter = formatter
 }
 
-func NewIOWriterAppender(writer io.Writer) *IOWriterAppender {
+func NewIOWriterAppender(writer io.Writer) IAppender {
 	return &IOWriterAppender{
 		writer: writer,
 	}

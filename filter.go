@@ -4,11 +4,11 @@ type IFilter interface {
 	IsLogPass(param *LogParam) bool
 }
 type IFilterFactory interface {
-	NewFilter(builder ILogFactoryBuilder, params map[string]string) IFilter
+	NewFilter(builder ILogFactoryBuilder, params map[string]string) (IFilter, error)
 }
-type FuncFilterFactory func(builder ILogFactoryBuilder, params map[string]string) IFilter
+type FuncFilterFactory func(builder ILogFactoryBuilder, params map[string]string) (IFilter, error)
 
-func (this FuncFilterFactory) NewFilter(builder ILogFactoryBuilder, params map[string]string) IFilter {
+func (this FuncFilterFactory) NewFilter(builder ILogFactoryBuilder, params map[string]string) (IFilter, error) {
 	return this(builder, params)
 }
 

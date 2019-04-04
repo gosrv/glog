@@ -21,11 +21,11 @@ func (this FuncElementFormat) ElementFormat(param *LogParam) []byte {
 }
 
 type IElementFormatterFactory interface {
-	NewElementFormatter(params string) IElementFormatter
+	NewElementFormatter(params string) (IElementFormatter, error)
 }
-type FuncElementFormatterFactory func(param string) IElementFormatter
+type FuncElementFormatterFactory func(param string) (IElementFormatter, error)
 
-func (this FuncElementFormatterFactory) NewElementFormatter(param string) IElementFormatter {
+func (this FuncElementFormatterFactory) NewElementFormatter(param string) (IElementFormatter, error) {
 	return this(param)
 }
 
