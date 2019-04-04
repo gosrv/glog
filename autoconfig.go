@@ -24,5 +24,5 @@ func LoadLogFactory(path string) (ILogFactory, error) {
 		return nil, err
 	}
 	builder := NewLogFactoryBuilder()
-	return builder.Build(cfgroot), nil
+	return builder.Build(cfgroot)
 }

@@ -1,6 +1,7 @@
 package glog
 
 import (
+	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -20,40 +21,43 @@ const (
 )
 
 type IWriterFactory interface {
-	NewWriter(param map[string]string) io.Writer
+	NewWriter(param map[string]string) (io.Writer, error)
 }
-type FuncWriterFactory func(param map[string]string) io.Writer
+type FuncWriterFactory func(param map[string]string) (io.Writer, error)
 
-func (this FuncWriterFactory) NewWriter(param map[string]string) io.Writer {
+func (this FuncWriterFactory) NewWriter(param map[string]string) (io.Writer, error) {
 	return this(param)
 }
 
-func NewWriterStd(param map[string]string) io.Writer {
-	return os.Stdout
+func NewWriterStd(param map[string]string) (io.Writer, error) {
+	return os.Stdout, nil
 }
 
-func NewWriterDiscard(param map[string]string) io.Writer {
-	return ioutil.Discard
+func NewWriterDiscard(param map[string]string) (io.Writer, error) {
+	return ioutil.Discard, nil
 }
 
-func NewWriterFile(param map[string]string) io.Writer {
+func NewWriterFile(param map[string]string) (io.Writer, error) {
 	fname := param[ParamFilePath]
 	if len(fname) == 0 {
-		panic("appender has no file name")
+		return nil, errors.New("create file writer failed, miss required param " + ParamFilePath)
 	}
-	_ = os.MkdirAll(filepath.Dir(fname), 0644)
+	err := os.MkdirAll(filepath.Dir(fname), 0644)
+	if err != nil {
+		return nil, NewComError("create file writer failed, mkdir error", err)
+	}
 	file, err := os.OpenFile(fname, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		panic(err)
+		return nil, NewComError("create file writer failed, open file error", err)
 	}
 
-	return file
+	return file, nil
 }
 
-func NewWriterSplitFile(param map[string]string) io.Writer {
+func NewWriterSplitFile(param map[string]string) (io.Writer, error) {
 	path := param[ParamFilePath]
 	if len(path) == 0 {
-		panic("appender has no file name")
+		return nil, errors.New("create sfile writer failed, miss required param " + ParamFilePath)
 	}
 	lext := strings.LastIndex(path, ".")
 	fname := path[:lext]
@@ -63,11 +67,11 @@ func NewWriterSplitFile(param map[string]string) io.Writer {
 	}
 	span := param[ParamFileSpan]
 	if len(span) < 2 {
-		panic("error")
+		return nil, errors.New("create sfile writer failed, span format error " + span)
 	}
 	ispan, err := strconv.Atoi(span[:len(span)-1])
 	if err != nil {
-		panic(err)
+		return nil, errors.New("create sfile writer failed, span format error " + span)
 	}
 	switch span[len(span)-1] {
 	case 's':
@@ -78,7 +82,7 @@ func NewWriterSplitFile(param map[string]string) io.Writer {
 	case 'd':
 		ispan *= 24 * 3600
 	default:
-		panic("error")
+		return nil, errors.New("create sfile writer failed, span format error " + span)
 	}
 
 	return NewSplitFileWriter(fname, fext, int64(ispan))

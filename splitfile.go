@@ -16,19 +16,28 @@ type SplitFileWriter struct {
 	span    int64
 }
 
-func NewSplitFileWriter(path string, ext string, span int64) *SplitFileWriter {
-	return &SplitFileWriter{path: path, ext: ext, span: span}
+func NewSplitFileWriter(path string, ext string, span int64) (*SplitFileWriter, error) {
+	ins := &SplitFileWriter{path: path, ext: ext, span: span}
+	_, err := ins.prepareFile()
+	if err != nil {
+		return nil, NewComError("create sfile error", err)
+	}
+	return ins, nil
 }
 
 func (this *SplitFileWriter) Write(p []byte) (n int, err error) {
-	return this.prepareFile().Write(p)
+	writer, err := this.prepareFile()
+	if err != nil {
+		_, _ = os.Stderr.Write([]byte(err.Error() + "\n"))
+	}
+	return writer.Write(p)
 }
 
-func (this *SplitFileWriter) prepareFile() io.Writer {
+func (this *SplitFileWriter) prepareFile() (io.Writer, error) {
 	now := time.Now().Unix()
 	curSpanIdx := now / this.span
 	if curSpanIdx == this.spanidx && this.file != nil {
-		return this.file
+		return this.file, nil
 	}
 	this.spanidx = curSpanIdx
 	if this.file != nil {
@@ -41,15 +50,13 @@ func (this *SplitFileWriter) prepareFile() io.Writer {
 	fullName := this.path + sufix + "." + this.ext
 	err := os.MkdirAll(filepath.Dir(fullName), 0644)
 	if err != nil {
-		_, _ = os.Stderr.Write([]byte(err.Error() + "\n"))
-		return os.Stderr
+		return os.Stderr, err
 	}
 
 	this.file, err = os.OpenFile(fullName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		_, _ = os.Stderr.Write([]byte(err.Error() + "\n"))
-		return os.Stderr
+		return os.Stderr, err
 	}
 
-	return this.file
+	return this.file, nil
 }

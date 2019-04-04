@@ -1,6 +1,7 @@
 package glog
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 )
@@ -34,12 +35,12 @@ type ILogFactoryBuilder interface {
 	CreateAppender(name string, writers map[string]io.Writer, cfg map[string]string) IAppender
 
 	SetFilterFactory(name string, filter IFilterFactory)
-	CreateFilter(name string, cfg map[string]string) IFilter
+	CreateFilter(name string, cfg map[string]string) (IFilter, error)
 
 	SetWriterFactory(name string, writer IWriterFactory)
-	CreateWriter(name string, cfg map[string]string) io.Writer
+	CreateWriter(name string, cfg map[string]string) (io.Writer, error)
 
-	Build(cfg *ConfigLogRoot) ILogFactory
+	Build(cfg *ConfigLogRoot) (ILogFactory, error)
 }
 
 type logFactoryBuilder struct {
@@ -80,8 +81,12 @@ func (this *logFactoryBuilder) SetWriterFactory(name string, writer IWriterFacto
 	this.writerFactory[name] = writer
 }
 
-func (this *logFactoryBuilder) CreateWriter(name string, cfg map[string]string) io.Writer {
-	return this.writerFactory[name].NewWriter(cfg)
+func (this *logFactoryBuilder) CreateWriter(name string, cfg map[string]string) (io.Writer, error) {
+	factory := this.writerFactory[name]
+	if factory == nil {
+		return nil, fmt.Errorf("create writer %v failed, miss required factory", name)
+	}
+	return factory.NewWriter(cfg)
 }
 
 func (this *logFactoryBuilder) SetLayoutParser(layoutParser ILayoutParser) {
@@ -100,8 +105,12 @@ func (this *logFactoryBuilder) SetFilterFactory(name string, filter IFilterFacto
 	this.filterFactory[name] = filter
 }
 
-func (this *logFactoryBuilder) CreateFilter(name string, cfg map[string]string) IFilter {
-	return this.filterFactory[name].NewFilter(this, cfg)
+func (this *logFactoryBuilder) CreateFilter(name string, cfg map[string]string) (IFilter, error) {
+	factory := this.filterFactory[name]
+	if factory == nil {
+		return nil, fmt.Errorf("create filter %v failed, miss required factory", name)
+	}
+	return factory.NewFilter(this, cfg), nil
 }
 
 func (this *logFactoryBuilder) CreateAppender(name string, writers map[string]io.Writer, cfg map[string]string) IAppender {
@@ -112,13 +121,20 @@ func (this *logFactoryBuilder) SetAppenderFactory(name string, appender IAppende
 	this.appenderFactory[name] = appender
 }
 
-func (this *logFactoryBuilder) buildWriters(cfg map[string]map[string]string) map[string]io.Writer {
+func (this *logFactoryBuilder) buildWriters(cfg map[string]map[string]string) (map[string]io.Writer, error) {
 	writers := make(map[string]io.Writer)
 	for writerName, writerCfg := range cfg {
-		writer := this.CreateWriter(writerCfg["writer"], writerCfg)
+		writerType, ok := writerCfg["writer"]
+		if !ok {
+			return nil, fmt.Errorf("create writer %v failed, miss required field %v", writerName, "writer")
+		}
+		writer, err := this.CreateWriter(writerType, writerCfg)
+		if err != nil {
+			return nil, NewComError(fmt.Sprintf("create writer %v failed", writerName), err)
+		}
 		writers[writerName] = writer
 	}
-	return writers
+	return writers, nil
 }
 
 type AppenderCtx struct {
@@ -126,13 +142,17 @@ type AppenderCtx struct {
 	prepareable []ILogPrepare
 }
 
-func (this *logFactoryBuilder) buildAppenders(cfg map[string]*ConfigAppender, writers map[string]io.Writer) map[string]*AppenderCtx {
+func (this *logFactoryBuilder) buildAppenders(cfg map[string]*ConfigAppender, writers map[string]io.Writer) (map[string]*AppenderCtx, error) {
 	appenders := make(map[string]*AppenderCtx, len(cfg))
 	for appenderName, appenderCfg := range cfg {
 		appendCtx := &AppenderCtx{}
 		appendCtx.appender = this.CreateAppender(appenderCfg.Appender, writers, appenderCfg.Params)
 		for filterName, filterParam := range appenderCfg.Filters {
-			appendCtx.appender.AddFilter(this.CreateFilter(filterName, filterParam))
+			filter, err := this.CreateFilter(filterName, filterParam)
+			if err != nil {
+				return nil, NewComError(fmt.Sprintf("build appender %v failed", appenderName), err)
+			}
+			appendCtx.appender.AddFilter(filter)
 		}
 		elements, format := this.layoutParser.LayoutParser([]byte(appenderCfg.Layout))
 		elementFormaters := make([]IElementFormatter, 0, len(elements))
@@ -149,12 +169,18 @@ func (this *logFactoryBuilder) buildAppenders(cfg map[string]*ConfigAppender, wr
 		}
 		appenders[appenderName] = appendCtx
 	}
-	return appenders
+	return appenders, nil
 }
 
-func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
-	writers := this.buildWriters(cfg.Writers)
-	appenders := this.buildAppenders(cfg.Appenders, writers)
+func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) (ILogFactory, error) {
+	writers, err := this.buildWriters(cfg.Writers)
+	if err != nil {
+		return nil, NewComError("build writer error", err)
+	}
+	appenders, err := this.buildAppenders(cfg.Appenders, writers)
+	if err != nil {
+		return nil, NewComError("build appenders error", err)
+	}
 
 	loggers := make(map[string]ILogger, len(cfg.Loggers))
 	for name, lcfg := range cfg.Loggers {
@@ -164,7 +190,7 @@ func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
 		for _, appenderName := range lcfg.Appenders {
 			nextAppender, ok := appenders[appenderName]
 			if !ok {
-				panic("error")
+				return nil, fmt.Errorf("miss required appender %v in logger %v", appenderName, name)
 			}
 			preparable = append(preparable, nextAppender.prepareable...)
 			if firstAppender == nil {
@@ -178,9 +204,13 @@ func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
 
 		nlog := NewLogger([]byte(name), nil, firstAppender, preparable)
 		for filterName, filterParam := range lcfg.Filters {
-			nlog.AddFilter(this.CreateFilter(filterName, filterParam))
+			filter, err := this.CreateFilter(filterName, filterParam)
+			if err != nil {
+				return nil, NewComError(fmt.Sprintf("build logger %v error", name), err)
+			}
+			nlog.AddFilter(filter)
 		}
 		loggers[name] = nlog
 	}
-	return NewLogFactory(loggers)
+	return NewLogFactory(loggers), nil
 }
