@@ -21,7 +21,7 @@ func newLogLevelLimitFilter(minLevel Level) *logLevelLimitFilter {
 }
 
 func (this *logLevelLimitFilter) IsLogPass(param *LogParam) bool {
-	return this.minLevel >= param.level
+	return this.minLevel >= param.LogLevel
 }
 
 type logLevelPassFilter struct {
@@ -35,7 +35,7 @@ func newLogLevelPassFilter(passLevel []Level, rejectLevel []Level) *logLevelPass
 
 func (this *logLevelPassFilter) IsLogPass(param *LogParam) bool {
 	for _, l := range this.rejectLevel {
-		if l == param.level {
+		if l == param.LogLevel {
 			return false
 		}
 	}
@@ -43,7 +43,7 @@ func (this *logLevelPassFilter) IsLogPass(param *LogParam) bool {
 		return true
 	}
 	for _, l := range this.passLevel {
-		if l == param.level {
+		if l == param.LogLevel {
 			return true
 		}
 	}

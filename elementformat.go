@@ -47,28 +47,28 @@ func (this *ElementFormatDateTime) ElementFormat(param *LogParam) []byte {
 }
 
 func ElementFormatBody(param *LogParam) []byte {
-	return param.body
+	return param.Body
 }
 
 func ElementFormatLogger(param *LogParam) []byte {
-	return param.loggerName
+	return param.LogName
 }
 
 func ElementFormatLevel(param *LogParam) []byte {
-	data, _ := param.level.MarshalText()
+	data, _ := param.LogLevel.MarshalText()
 	return data
 }
 
 func ElementFormatFields(param *LogParam) []byte {
 	buf := make([]byte, 0, 512)
-	for _, field := range param.fixFields {
+	for _, field := range param.FixFields {
 		buf = append(buf, []byte(field.key)...)
 		buf = append(buf, '=')
 		buf = append(buf, []byte(fmt.Sprintf("%v", field.val))...)
 		buf = append(buf, ' ')
 	}
 
-	for _, field := range param.fields {
+	for _, field := range param.Fields {
 		buf = append(buf, []byte(field.key)...)
 		buf = append(buf, '=')
 		buf = append(buf, []byte(fmt.Sprintf("%v", field.val))...)
@@ -99,7 +99,7 @@ func NewElementFormatFile(sep string, short bool) *ElementFormatFile {
 }
 
 func (this *ElementFormatFile) LogPrepare(param *LogParam) {
-	_, okFile := param.prepare["file"]
+	_, okFile := param.Prepare["file"]
 	if okFile {
 		return
 	}
@@ -113,15 +113,15 @@ func (this *ElementFormatFile) LogPrepare(param *LogParam) {
 		funcname = strings.TrimPrefix(funcname, ".") // foo
 		filename = filepath.Base(filename)
 	}
-	param.prepare["file"] = filename
-	param.prepare["line"] = strconv.Itoa(line)
-	param.prepare["func"] = funcname
+	param.Prepare["file"] = filename
+	param.Prepare["line"] = strconv.Itoa(line)
+	param.Prepare["func"] = funcname
 }
 
 func (this *ElementFormatFile) ElementFormat(param *LogParam) []byte {
-	name := param.prepare["file"]
-	line := param.prepare["line"]
-	funcn := param.prepare["func"]
+	name := param.Prepare["file"]
+	line := param.Prepare["line"]
+	funcn := param.Prepare["func"]
 	cache := make([]byte, 0, len(name)+len(line)+len(funcn)+len(this.sep))
 	cache = append(cache, []byte(funcn)...)
 	cache = append(cache, []byte(this.sep)...)

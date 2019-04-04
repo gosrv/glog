@@ -8,7 +8,7 @@
     },
     "sfile":{
       "writer":"sfile",
-      "path":"slog/log.log"
+      "path":"slog/log.log",
       "span":"1m"
     }
   },

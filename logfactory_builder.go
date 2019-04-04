@@ -56,10 +56,22 @@ func NewLogFactoryBuilder() ILogFactoryBuilder {
 	builder := &logFactoryBuilder{
 		layoutParser:           FuncLayoutParser(DefaultLayoutParser),
 		layoutFormatterFactory: FuncLayoutFormatterFactory(NewLayoutFormatter),
-		elementFormaterFactory: ElementFormatterFactories,
-		appenderFactory:        AppenderFactories,
-		filterFactory:          FilterFactories,
-		writerFactory:          WriterFactories,
+		writerFactory:          make(map[string]IWriterFactory),
+		elementFormaterFactory: make(map[string]IElementFormatterFactory),
+		appenderFactory:        make(map[string]IAppenderFactory),
+		filterFactory:          make(map[string]IFilterFactory),
+	}
+	for k, v := range ElementFormatterFactories {
+		builder.elementFormaterFactory[k] = v
+	}
+	for k, v := range AppenderFactories {
+		builder.appenderFactory[k] = v
+	}
+	for k, v := range FilterFactories {
+		builder.filterFactory[k] = v
+	}
+	for k, v := range WriterFactories {
+		builder.writerFactory[k] = v
 	}
 	return builder
 }
@@ -100,20 +112,23 @@ func (this *logFactoryBuilder) SetAppenderFactory(name string, appender IAppende
 	this.appenderFactory[name] = appender
 }
 
+func (this *logFactoryBuilder) buildWriters(cfg map[string]map[string]string) map[string]io.Writer {
+	writers := make(map[string]io.Writer)
+	for writerName, writerCfg := range cfg {
+		writer := this.CreateWriter(writerCfg["writer"], writerCfg)
+		writers[writerName] = writer
+	}
+	return writers
+}
+
 type AppenderCtx struct {
 	appender    IAppender
 	prepareable []ILogPrepare
 }
 
-func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
-	writers := make(map[string]io.Writer)
-	for writerName, writerCfg := range cfg.Writers {
-		writer := this.CreateWriter(writerCfg["writer"], writerCfg)
-		writers[writerName] = writer
-	}
-
-	appenders := make(map[string]*AppenderCtx, len(cfg.Appenders))
-	for appenderName, appenderCfg := range cfg.Appenders {
+func (this *logFactoryBuilder) buildAppenders(cfg map[string]*ConfigAppender, writers map[string]io.Writer) map[string]*AppenderCtx {
+	appenders := make(map[string]*AppenderCtx, len(cfg))
+	for appenderName, appenderCfg := range cfg {
 		appendCtx := &AppenderCtx{}
 		appendCtx.appender = this.CreateAppender(appenderCfg.Appender, writers, appenderCfg.Params)
 		for filterName, filterParam := range appenderCfg.Filters {
@@ -134,6 +149,12 @@ func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
 		}
 		appenders[appenderName] = appendCtx
 	}
+	return appenders
+}
+
+func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
+	writers := this.buildWriters(cfg.Writers)
+	appenders := this.buildAppenders(cfg.Appenders, writers)
 
 	loggers := make(map[string]ILogger, len(cfg.Loggers))
 	for name, lcfg := range cfg.Loggers {
