@@ -2,9 +2,9 @@ package example
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gosrv/glog"
 	"testing"
+	"time"
 )
 
 var cfg = `
@@ -16,7 +16,7 @@ var cfg = `
       "filters": {
         "level.limit": {"level": "debug"}
       },
-      "layout": "{date:2006-01-02 15:04:05} [{level}] {body} {fields}"
+      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,short}"
     },
 	"console" : {
       "params": {
@@ -24,7 +24,7 @@ var cfg = `
       "filters": {
         "level.limit": {"level": "debug"}
       },
-      "layout": "{date:2006-01-02 15:04:05} [{level}] {body} {fields}"
+      "layout": "[goid:{goid}] date:2006-01-02 15:04:05} [{level}] {body} {fields} {file}"
     }
   },
   "loggers" : {
@@ -35,19 +35,28 @@ var cfg = `
         "level.pass": {"pass": "debug", "reject": "error"}
       },
       "appenders": ["console"]
+    },
+	"testlogger2" : {
+      "params": {
+      },
+      "filters": {
+        "level.pass": {"pass": "debug", "reject": "error"}
+      },
+      "appenders": ["discard"]
     }
   }
 }
 `
+
 func BenchmarkXX(b *testing.B) {
 	cfgroot := &glog.ConfigLogRoot{}
 	_ = json.Unmarshal([]byte(cfg), cfgroot)
 
 	builder := glog.NewLogFactoryBuilder()
 	factory := builder.Build(cfgroot)
-	logger := factory.GetLogger("testlogger1")
+	logger := factory.GetLogger("testlogger2")
 	b.StartTimer()
-	for i:=0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		logger.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("hello")
 	}
 	b.StopTimer()
@@ -61,6 +70,7 @@ func TestXX(t *testing.T) {
 	factory := builder.Build(cfgroot)
 	logger := factory.GetLogger("testlogger1")
 
-	logger.WithFields(glog.LF{"abc":123,"rrr":666}).Debug("hello")
-	fmt.Println("finish************")
+	go logger.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("hello")
+	go logger.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("wrold")
+	time.Sleep(time.Second)
 }

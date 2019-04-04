@@ -2,6 +2,7 @@ package glog
 
 import (
 	"reflect"
+	"sync"
 )
 
 type ILayoutFormatter interface {
@@ -24,28 +25,23 @@ func (this FuncLayoutFormatterFactory) NewLayoutFormatter(layout [][]byte, eleme
 }
 
 type layoutFormatter struct {
-	cache				[]byte
+	cache             []byte
 	layout            [][]byte
 	elementFormatters []IElementFormatter
+	lock              sync.Mutex
 }
 
 func NewLayoutFormatter(layout [][]byte, elementFormatters []IElementFormatter) ILayoutFormatter {
-	llen := len(layout)
-	if llen > 0 {
-		last := layout[llen-1]
-		if len(last) == 0 || last[len(last)-1] != '\n' {
-			layout = append(layout, []byte{'\n'})
-		}
-	}
-
 	return &layoutFormatter{
-		cache:make([]byte, 0, 4096),
-		layout: layout,
+		cache:             make([]byte, 0, 4096),
+		layout:            layout,
 		elementFormatters: elementFormatters,
 	}
 }
 
 func (this *layoutFormatter) LayoutFormat(param *LogParam) []byte {
+	this.lock.Lock()
+	defer this.lock.Unlock()
 	argLen := len(this.elementFormatters)
 	formated := this.cache
 	formated = append(formated, this.layout[0]...)

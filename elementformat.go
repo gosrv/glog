@@ -1,7 +1,12 @@
 package glog
 
 import (
+	"bytes"
 	"fmt"
+	"path/filepath"
+	"runtime"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -59,4 +64,58 @@ func ElementFormatFields(param *LogParam) []byte {
 		buf = append(buf, ' ')
 	}
 	return buf
+}
+
+func ElementFormatGOID(param *LogParam) []byte {
+	b := make([]byte, 64)
+	b = b[:runtime.Stack(b, false)]
+	b = bytes.TrimPrefix(b, []byte("goroutine "))
+	b = b[:bytes.IndexByte(b, ' ')]
+	n, _ := strconv.ParseUint(string(b), 10, 64)
+	return []byte(strconv.Itoa(int(n)))
+}
+
+type ElementFormatFile struct {
+	sep   string
+	short bool
+}
+
+func NewElementFormatFile(sep string, short bool) *ElementFormatFile {
+	if len(sep) == 0 {
+		sep = ":"
+	}
+	return &ElementFormatFile{sep: sep, short: short}
+}
+
+func (this *ElementFormatFile) LogPrepare(param *LogParam) {
+	_, okFile := param.prepare["file"]
+	if okFile {
+		return
+	}
+	filename, line, funcname := "???", 0, "???"
+	pc, filename, line, ok := runtime.Caller(3)
+	if ok {
+		funcname = runtime.FuncForPC(pc).Name()
+	}
+	if this.short {
+		funcname = filepath.Ext(funcname)            // .foo
+		funcname = strings.TrimPrefix(funcname, ".") // foo
+		filename = filepath.Base(filename)
+	}
+	param.prepare["file"] = filename
+	param.prepare["line"] = strconv.Itoa(line)
+	param.prepare["func"] = funcname
+}
+
+func (this *ElementFormatFile) ElementFormat(param *LogParam) []byte {
+	name := param.prepare["file"]
+	line := param.prepare["line"]
+	funcn := param.prepare["func"]
+	cache := make([]byte, 0, len(name)+len(line)+len(funcn)+len(this.sep))
+	cache = append(cache, []byte(funcn)...)
+	cache = append(cache, []byte(this.sep)...)
+	cache = append(cache, []byte(line)...)
+	cache = append(cache, []byte(this.sep)...)
+	cache = append(cache, []byte(name)...)
+	return cache
 }

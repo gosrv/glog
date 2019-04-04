@@ -37,10 +37,17 @@ type IFieldLogger interface {
 
 type LogParam struct {
 	fixFields []LogField
-	fields []LogField
-	level  Level
-	body   []byte
+	fields    []LogField
+	level     Level
+	body      []byte
+	prepare   map[string]string
 }
+
+type ILogPrepare interface {
+	LogPrepare(param *LogParam)
+}
+
+var ILogPrepareType = reflect.TypeOf((*ILogPrepare)(nil)).Elem()
 
 type LogField struct {
 	key string
@@ -52,16 +59,21 @@ type LF map[string]interface{}
 func NewLogField(key string, val interface{}) LogField {
 	return LogField{key: key, val: val}
 }
+
 type logger struct {
 	LogParam
 	FilterBundle
-	appender  IAppender
+	appender   IAppender
+	logPrepare []ILogPrepare
 }
 
-func NewLogger(fixFields map[string]interface{}, appender IAppender) *logger {
+func NewLogger(fixFields map[string]interface{}, appender IAppender, logPrepare []ILogPrepare) *logger {
 	l := &logger{
-		appender:  appender,
-		LogParam:  LogParam{},
+		appender: appender,
+		LogParam: LogParam{
+			prepare: make(map[string]string),
+		},
+		logPrepare: logPrepare,
 	}
 	for fn, fe := range fixFields {
 		l.fixFields = append(l.fixFields, NewLogField(fn, fe))
@@ -82,46 +94,46 @@ func (this *logger) WithFields(fields LF) IFieldLogger {
 }
 
 func (this *logger) CreateLoggerWithFields(fields LF) IFieldLogger {
-	nfields := make(map[string]interface{}, len(fields) + len(this.fixFields))
+	nfields := make(map[string]interface{}, len(fields)+len(this.fixFields))
 	for _, fe := range this.fixFields {
 		nfields[fe.key] = fe.val
 	}
 	for fn, fe := range fields {
 		nfields[fn] = fe
 	}
-	return NewLogger(nfields, this.appender)
+	return NewLogger(nfields, this.appender, this.logPrepare)
 }
 
 func (this *logger) Debug(format string, args ...interface{}) {
-	this.Log(DebugLevel, format, args...)
+	this.log(DebugLevel, format, args...)
 }
 
 func (this *logger) Info(format string, args ...interface{}) {
-	this.Log(InfoLevel, format, args...)
+	this.log(InfoLevel, format, args...)
 }
 
 func (this *logger) Print(format string, args ...interface{}) {
-	this.Log(TraceLevel, format, args...)
+	this.log(TraceLevel, format, args...)
 }
 
 func (this *logger) Warn(format string, args ...interface{}) {
-	this.Log(WarnLevel, format, args...)
+	this.log(WarnLevel, format, args...)
 }
 
 func (this *logger) Error(format string, args ...interface{}) {
-	this.Log(ErrorLevel, format, args...)
+	this.log(ErrorLevel, format, args...)
 }
 
 func (this *logger) Fatal(format string, args ...interface{}) {
-	this.Log(FatalLevel, format, args...)
+	this.log(FatalLevel, format, args...)
 }
 
 func (this *logger) Panic(format string, args ...interface{}) {
-	this.Log(PanicLevel, format, args...)
+	this.log(PanicLevel, format, args...)
 }
 
-func (this *logger) Log(level Level, format string, args ...interface{}) {
-	if len(args) > 0 {
+func (this *logger) log(level Level, format string, args ...interface{}) {
+	if len(args) == 0 {
 		this.LogParam.body = []byte(format)
 	} else {
 		this.LogParam.body = []byte(fmt.Sprintf(format, args...))
@@ -130,6 +142,12 @@ func (this *logger) Log(level Level, format string, args ...interface{}) {
 	if !this.FilterBundle.IsLogPass(&this.LogParam) {
 		return
 	}
+	for _, prepare := range this.logPrepare {
+		prepare.LogPrepare(&this.LogParam)
+	}
 	this.appender.Write(&this.LogParam)
 	this.fields = nil
+	if len(this.LogParam.prepare) > 0 {
+		this.LogParam.prepare = make(map[string]string)
+	}
 }

@@ -17,6 +17,7 @@ type ILayoutParser interface {
 	LayoutParser(layout []byte) ([]*LayoutElement, [][]byte)
 }
 type FuncLayoutParser func(layout []byte) ([]*LayoutElement, [][]byte)
+
 func (this FuncLayoutParser) LayoutParser(layout []byte) ([]*LayoutElement, [][]byte) {
 	return this(layout)
 }
@@ -64,13 +65,18 @@ func DefaultLayoutParser(layout []byte) ([]*LayoutElement, [][]byte) {
 	format := make([][]byte, 0, llen)
 	layoutElements := make([]*LayoutElement, 0, 16)
 
-	for pos < llen {
+	for {
 		// 读取开始符
 		startPos := readNextExpectChar(layout, pos, len(layout), '{')
 		// 读取结束符
 		endPos := readNextExpectCharNotInQuot(layout, startPos+1, '}')
 		// 之前的加入format
-		format = append(format, layout[pos:startPos])
+		if startPos == endPos {
+			format = append(format, append(layout[pos:startPos], '\n'))
+			break
+		} else {
+			format = append(format, layout[pos:startPos])
+		}
 		colonPos := readNextExpectChar(layout, startPos, endPos, ':')
 		element := bytes.TrimSpace(layout[startPos+1 : colonPos])
 		var value []byte

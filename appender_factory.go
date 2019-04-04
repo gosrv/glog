@@ -5,7 +5,7 @@ import "os"
 const (
 	AppenderConsole = "console"
 	AppenderFile    = "file"
-	AppenderDiscard    = "discard"
+	AppenderDiscard = "discard"
 	ParamFileName   = "path"
 )
 
@@ -32,5 +32,5 @@ func NewAppenderFile(builder ILogFactoryBuilder, params map[string]string) IAppe
 var AppenderFactories = map[string]IAppenderFactory{
 	AppenderConsole: FuncAppenderFactory(NewAppenderConsole),
 	AppenderFile:    FuncAppenderFactory(NewAppenderFile),
-	AppenderDiscard:    FuncAppenderFactory(NewAppenderDiscard),
+	AppenderDiscard: FuncAppenderFactory(NewAppenderDiscard),
 }

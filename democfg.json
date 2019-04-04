@@ -2,31 +2,17 @@
 {
   "appenders" : {
     "console" : {
-      "params": {
-      },
-      "filters": {
-        "level": {"pass": "debug", "reject": "error"}
-      },
-      "layout": "{c}{level} {date:yy-MM-dd hh:mm:ss}  {body} {fields:json} {file}:{fileline}"
+      "layout": "{c}{level} {date:yy-MM-dd hh:mm:ss}  {body} {fields:json} {file}"
     },
     "file" : {
-      "params": {
-      },
       "layout": "{level} {date:yy-MM-dd hh:mm:ss}  {body} {fields:json} {file}:{fileline}"
     }
   },
   "loggers" : {
     "testlogger1" : {
-      "params": {
-      },
-      "filters": {
-        "level": {"pass": "debug", "reject": "error"}
-      },
       "appenders": ["console", "file"]
     },
     "testlogger2" : {
-      "params": {
-      },
       "appenders": ["console"]
     }
   }

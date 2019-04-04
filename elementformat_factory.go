@@ -1,31 +1,55 @@
 package glog
 
+import "strings"
+
 const (
-	ElememtFormatBody  = "body"
-	ElememtFormatDate  = "date"
-	ElememtFormatLevel = "level"
-	ElementFormatField = "fields"
+	ElememtBody   = "body"
+	ElememtDate   = "date"
+	ElememtLevel  = "level"
+	ElementFields = "fields"
+	ElementFile   = "file"
+	ElementGOID   = "goid"
 )
 
-func NewElememtFormatBody(param string) IElementFormatter {
+func NewElememtBody(param string) IElementFormatter {
 	return FuncElementFormat(ElementFormatBody)
 }
 
-func NewElememtFormatDate(param string) IElementFormatter {
+func NewElememtDate(param string) IElementFormatter {
 	return NewElementFormatDateTime(param)
 }
 
-func NewElememtFormatLevel(param string) IElementFormatter {
+func NewElememtLevel(param string) IElementFormatter {
 	return FuncElementFormat(ElementFormatLevel)
 }
 
-func NewElementFormatFields(param string) IElementFormatter {
+func NewElementFields(param string) IElementFormatter {
 	return FuncElementFormat(ElementFormatFields)
 }
 
+func NewElementFile(param string) IElementFormatter {
+	sp := strings.Split(param, ",")
+	sep := ":"
+	short := true
+	switch len(sp) {
+	case 1:
+		sep = sp[0]
+	case 2:
+		sep = sp[0]
+		short = sp[1] == "short"
+	}
+	return NewElementFormatFile(sep, short)
+}
+
+func NewElementGOID(param string) IElementFormatter {
+	return FuncElementFormat(ElementFormatGOID)
+}
+
 var ElementFormatterFactories = map[string]IElementFormatterFactory{
-	ElememtFormatBody:  FuncElementFormatterFactory(NewElememtFormatBody),
-	ElememtFormatDate:  FuncElementFormatterFactory(NewElememtFormatDate),
-	ElememtFormatLevel: FuncElementFormatterFactory(NewElememtFormatLevel),
-	ElementFormatField: FuncElementFormatterFactory(NewElementFormatFields),
+	ElememtBody:   FuncElementFormatterFactory(NewElememtBody),
+	ElememtDate:   FuncElementFormatterFactory(NewElememtDate),
+	ElememtLevel:  FuncElementFormatterFactory(NewElememtLevel),
+	ElementFields: FuncElementFormatterFactory(NewElementFields),
+	ElementFile:   FuncElementFormatterFactory(NewElementFile),
+	ElementGOID:   FuncElementFormatterFactory(NewElementGOID),
 }
