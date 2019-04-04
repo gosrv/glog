@@ -36,11 +36,12 @@ type IFieldLogger interface {
 }
 
 type LogParam struct {
-	fixFields []LogField
-	fields    []LogField
-	level     Level
-	body      []byte
-	prepare   map[string]string
+	fixFields  []LogField
+	fields     []LogField
+	level      Level
+	body       []byte
+	prepare    map[string]string
+	loggerName []byte
 }
 
 type ILogPrepare interface {
@@ -67,11 +68,13 @@ type logger struct {
 	logPrepare []ILogPrepare
 }
 
-func NewLogger(fixFields map[string]interface{}, appender IAppender, logPrepare []ILogPrepare) *logger {
+func NewLogger(name []byte, fixFields map[string]interface{},
+	appender IAppender, logPrepare []ILogPrepare) *logger {
 	l := &logger{
 		appender: appender,
 		LogParam: LogParam{
-			prepare: make(map[string]string),
+			prepare:    make(map[string]string),
+			loggerName: name,
 		},
 		logPrepare: logPrepare,
 	}
@@ -101,7 +104,7 @@ func (this *logger) CreateLoggerWithFields(fields LF) IFieldLogger {
 	for fn, fe := range fields {
 		nfields[fn] = fe
 	}
-	return NewLogger(nfields, this.appender, this.logPrepare)
+	return NewLogger(this.loggerName, nfields, this.appender, this.logPrepare)
 }
 
 func (this *logger) Debug(format string, args ...interface{}) {

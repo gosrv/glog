@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gosrv/glog"
 	"testing"
+	"time"
 )
 
 var cfg = `
@@ -17,7 +18,7 @@ var cfg = `
 		},
 		"sfile":{
 			"writer":"sfile",
-			"path":"slog/log.log"
+			"path":"slog/log.log",
 			"span":"1m"
 		}
 	},
@@ -40,7 +41,7 @@ var cfg = `
       "filters": {
         "level.limit": {"level": "debug"}
       },
-      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file}"
+      "layout": "[{logger}][goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file}"
     },
 	"file1" : {
 	  "appender":"writer",
@@ -90,13 +91,19 @@ func BenchmarkXX(b *testing.B) {
 
 func TestXX(t *testing.T) {
 	cfgroot := &glog.ConfigLogRoot{}
-	_ = json.Unmarshal([]byte(cfg), cfgroot)
+	err := json.Unmarshal([]byte(cfg), cfgroot)
+	if err != nil {
+		panic(err)
+	}
 
 	builder := glog.NewLogFactoryBuilder()
 	factory := builder.Build(cfgroot)
 	logger := factory.GetLogger("testlogger1")
 	clog := logger.CreateLoggerWithFields(glog.LF{"name": "eleven"})
+	for {
+		logger.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("hello")
+		clog.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("wrold")
+		time.Sleep(10 * time.Second)
+	}
 
-	logger.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("hello")
-	clog.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("wrold")
 }

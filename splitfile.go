@@ -26,7 +26,7 @@ func (this *SplitFileWriter) Write(p []byte) (n int, err error) {
 
 func (this *SplitFileWriter) prepareFile() io.Writer {
 	now := time.Now().Unix()
-	curSpanIdx := now % this.span
+	curSpanIdx := now / this.span
 	if curSpanIdx == this.spanidx && this.file != nil {
 		return this.file
 	}
@@ -37,17 +37,17 @@ func (this *SplitFileWriter) prepareFile() io.Writer {
 	}
 
 	sufix := time.Unix(this.spanidx*this.span, 0).Format("2006-01-02 15:04:05")
-	sufix = strings.Trim(sufix, ":")
+	sufix = strings.Replace(sufix, ":", "", -1)
 	fullName := this.path + sufix + "." + this.ext
 	err := os.MkdirAll(filepath.Dir(fullName), 0644)
 	if err != nil {
-		_, _ = os.Stderr.Write([]byte(err.Error()))
+		_, _ = os.Stderr.Write([]byte(err.Error() + "\n"))
 		return os.Stderr
 	}
 
 	this.file, err = os.OpenFile(fullName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		_, _ = os.Stderr.Write([]byte(err.Error()))
+		_, _ = os.Stderr.Write([]byte(err.Error() + "\n"))
 		return os.Stderr
 	}
 

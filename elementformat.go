@@ -50,6 +50,10 @@ func ElementFormatBody(param *LogParam) []byte {
 	return param.body
 }
 
+func ElementFormatLogger(param *LogParam) []byte {
+	return param.loggerName
+}
+
 func ElementFormatLevel(param *LogParam) []byte {
 	data, _ := param.level.MarshalText()
 	return data

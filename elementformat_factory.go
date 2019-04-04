@@ -9,6 +9,7 @@ const (
 	ElementFields = "fields"
 	ElementFile   = "file"
 	ElementGOID   = "goid"
+	ElementLogger = "logger"
 )
 
 func NewElememtBody(param string) IElementFormatter {
@@ -45,6 +46,10 @@ func NewElementGOID(param string) IElementFormatter {
 	return FuncElementFormat(ElementFormatGOID)
 }
 
+func NewElementLogger(param string) IElementFormatter {
+	return FuncElementFormat(ElementFormatLogger)
+}
+
 var ElementFormatterFactories = map[string]IElementFormatterFactory{
 	ElememtBody:   FuncElementFormatterFactory(NewElememtBody),
 	ElememtDate:   FuncElementFormatterFactory(NewElememtDate),
@@ -52,4 +57,5 @@ var ElementFormatterFactories = map[string]IElementFormatterFactory{
 	ElementFields: FuncElementFormatterFactory(NewElementFields),
 	ElementFile:   FuncElementFormatterFactory(NewElementFile),
 	ElementGOID:   FuncElementFormatterFactory(NewElementGOID),
+	ElementLogger: FuncElementFormatterFactory(NewElementLogger),
 }

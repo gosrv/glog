@@ -9,7 +9,7 @@ const (
 	AppenderChan   = "chan"
 	AppenderWriter = "writer"
 
-	AppenderWriterParamWriter = "wirter"
+	AppenderWriterParamWriter = "writer"
 )
 
 func NewAppenderChan(writers map[string]io.Writer, params map[string]string) IAppender {

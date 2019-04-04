@@ -59,6 +59,7 @@ func NewLogFactoryBuilder() ILogFactoryBuilder {
 		elementFormaterFactory: ElementFormatterFactories,
 		appenderFactory:        AppenderFactories,
 		filterFactory:          FilterFactories,
+		writerFactory:          WriterFactories,
 	}
 	return builder
 }
@@ -154,7 +155,7 @@ func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
 			}
 		}
 
-		nlog := NewLogger(nil, firstAppender, preparable)
+		nlog := NewLogger([]byte(name), nil, firstAppender, preparable)
 		for filterName, filterParam := range lcfg.Filters {
 			nlog.AddFilter(this.CreateFilter(filterName, filterParam))
 		}
