@@ -5,12 +5,12 @@ import (
 )
 
 type IAppenderFactory interface {
-	NewAppender(builder ILogFactoryBuilder, params map[string]string) IAppender
+	NewAppender(writers map[string]io.Writer, params map[string]string) IAppender
 }
-type FuncAppenderFactory func(builder ILogFactoryBuilder, params map[string]string) IAppender
+type FuncAppenderFactory func(writers map[string]io.Writer, params map[string]string) IAppender
 
-func (this FuncAppenderFactory) NewAppender(builder ILogFactoryBuilder, params map[string]string) IAppender {
-	return this(builder, params)
+func (this FuncAppenderFactory) NewAppender(writers map[string]io.Writer, params map[string]string) IAppender {
+	return this(writers, params)
 }
 
 // 输出目标

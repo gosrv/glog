@@ -1,36 +1,31 @@
 package glog
 
-import "os"
-
-const (
-	AppenderConsole = "console"
-	AppenderFile    = "file"
-	AppenderDiscard = "discard"
-	ParamFileName   = "path"
+import (
+	"io"
+	"os"
 )
 
-func NewAppenderConsole(builder ILogFactoryBuilder, params map[string]string) IAppender {
+const (
+	AppenderChan   = "chan"
+	AppenderWriter = "writer"
+
+	AppenderWriterParamWriter = "wirter"
+)
+
+func NewAppenderChan(writers map[string]io.Writer, params map[string]string) IAppender {
 	return NewIOWriterAppender(os.Stdout)
 }
 
-func NewAppenderDiscard(builder ILogFactoryBuilder, params map[string]string) IAppender {
-	return NewIOWriterAppender(nil)
-}
-
-func NewAppenderFile(builder ILogFactoryBuilder, params map[string]string) IAppender {
-	fname := params[ParamFileName]
-	if len(fname) == 0 {
+func NewAppenderWriter(writers map[string]io.Writer, params map[string]string) IAppender {
+	writerType := params[AppenderWriterParamWriter]
+	if len(writerType) == 0 {
 		panic("appender has no file name")
 	}
-	file, err := os.OpenFile(fname, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0)
-	if err != nil {
-		panic(err)
-	}
-	return NewIOWriterAppender(file)
+
+	return NewIOWriterAppender(writers[writerType])
 }
 
 var AppenderFactories = map[string]IAppenderFactory{
-	AppenderConsole: FuncAppenderFactory(NewAppenderConsole),
-	AppenderFile:    FuncAppenderFactory(NewAppenderFile),
-	AppenderDiscard: FuncAppenderFactory(NewAppenderDiscard),
+	AppenderChan:   FuncAppenderFactory(NewAppenderChan),
+	AppenderWriter: FuncAppenderFactory(NewAppenderWriter),
 }

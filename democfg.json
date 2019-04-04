@@ -1,19 +1,65 @@
-
 {
-  "appenders" : {
-    "console" : {
-      "layout": "{c}{level} {date:yy-MM-dd hh:mm:ss}  {body} {fields:json} {file}"
+  "writers" : {
+    "discard":{
+      "writer":"discard"
     },
-    "file" : {
-      "layout": "{level} {date:yy-MM-dd hh:mm:ss}  {body} {fields:json} {file}:{fileline}"
+    "console":{
+      "writer":"console"
+    },
+    "sfile":{
+      "writer":"sfile",
+      "path":"slog/log.log"
+      "span":"1m"
+    }
+  },
+  "appenders" : {
+    "discard1" : {
+      "appender":"writer",
+      "params": {
+        "writer":"discard"
+      },
+      "filters": {
+        "level.limit": {"level": "debug"}
+      },
+      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,short}"
+    },
+    "console1" : {
+      "appender":"writer",
+      "params": {
+        "writer":"console"
+      },
+      "filters": {
+        "level.limit": {"level": "debug"}
+      },
+      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file}"
+    },
+    "file1" : {
+      "appender":"writer",
+      "params": {
+        "writer":"sfile"
+      },
+      "filters": {
+        "level.limit": {"level": "debug"}
+      },
+      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file}"
     }
   },
   "loggers" : {
     "testlogger1" : {
-      "appenders": ["console", "file"]
+      "params": {
+      },
+      "filters": {
+        "level.pass": {"pass": "debug", "reject": "error"}
+      },
+      "appenders": ["console1", "file1"]
     },
     "testlogger2" : {
-      "appenders": ["console"]
+      "params": {
+      },
+      "filters": {
+        "level.pass": {"pass": "debug", "reject": "error"}
+      },
+      "appenders": ["discard1"]
     }
   }
 }

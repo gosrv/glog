@@ -4,27 +4,53 @@ import (
 	"encoding/json"
 	"github.com/gosrv/glog"
 	"testing"
-	"time"
 )
 
 var cfg = `
 {
+	"writers" : {
+		"discard":{
+			"writer":"discard"
+		},
+		"console":{
+			"writer":"console"
+		},
+		"sfile":{
+			"writer":"sfile",
+			"path":"slog/log.log"
+			"span":"1m"
+		}
+	},
   "appenders" : {
-    "discard" : {
+    "discard1" : {
+	  "appender":"writer",
       "params": {
+		"writer":"discard"
       },
       "filters": {
         "level.limit": {"level": "debug"}
       },
       "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,short}"
     },
-	"console" : {
+	"console1" : {
+	  "appender":"writer",
       "params": {
+		"writer":"console"
       },
       "filters": {
         "level.limit": {"level": "debug"}
       },
-      "layout": "[goid:{goid}] date:2006-01-02 15:04:05} [{level}] {body} {fields} {file}"
+      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file}"
+    },
+	"file1" : {
+	  "appender":"writer",
+      "params": {
+		"writer":"sfile"
+      },
+      "filters": {
+        "level.limit": {"level": "debug"}
+      },
+      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file}"
     }
   },
   "loggers" : {
@@ -34,7 +60,7 @@ var cfg = `
       "filters": {
         "level.pass": {"pass": "debug", "reject": "error"}
       },
-      "appenders": ["console"]
+      "appenders": ["console1", "file1"]
     },
 	"testlogger2" : {
       "params": {
@@ -42,7 +68,7 @@ var cfg = `
       "filters": {
         "level.pass": {"pass": "debug", "reject": "error"}
       },
-      "appenders": ["discard"]
+      "appenders": ["discard1"]
     }
   }
 }
@@ -69,8 +95,8 @@ func TestXX(t *testing.T) {
 	builder := glog.NewLogFactoryBuilder()
 	factory := builder.Build(cfgroot)
 	logger := factory.GetLogger("testlogger1")
+	clog := logger.CreateLoggerWithFields(glog.LF{"name": "eleven"})
 
-	go logger.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("hello")
-	go logger.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("wrold")
-	time.Sleep(time.Second)
+	logger.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("hello")
+	clog.WithFields(glog.LF{"abc": 123, "rrr": 666}).Debug("wrold")
 }
