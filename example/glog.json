@@ -6,14 +6,19 @@
     "console":{
       "writer":"console"
     },
-    "sfile":{
+    "sfiledev":{
       "writer":"sfile",
-      "path":"slog/log.log",
+      "path":"slog/logdev.log",
+      "span":"1m"
+    },
+    "sfilepub":{
+      "writer":"sfile",
+      "path":"slog/logpub.log",
       "span":"1m"
     }
   },
   "appenders" : {
-    "discard1" : {
+    "discard" : {
       "appender":"writer",
       "params": {
         "writer":"discard"
@@ -21,9 +26,9 @@
       "filters": {
         "level.limit": {"level": "debug"}
       },
-      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,short}"
+      "layout": "[{logger}] [goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,short}"
     },
-    "console1" : {
+    "console" : {
       "appender":"writer",
       "params": {
         "writer":"console"
@@ -31,35 +36,45 @@
       "filters": {
         "level.limit": {"level": "debug"}
       },
-      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file}"
+      "layout": "[{logger}] [goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,short}"
     },
-    "file1" : {
+    "sfiledev" : {
       "appender":"writer",
       "params": {
-        "writer":"sfile"
+        "writer":"sfiledev"
       },
       "filters": {
         "level.limit": {"level": "debug"}
       },
-      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file}"
+      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,full}"
+    },
+    "sfilepub" : {
+      "appender":"writer",
+      "params": {
+        "writer":"sfilepub"
+      },
+      "filters": {
+        "level.limit": {"level": "warn"}
+      },
+      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,full}"
     }
   },
   "loggers" : {
-    "testlogger1" : {
+    "loggerdev" : {
       "params": {
       },
       "filters": {
-        "level.pass": {"pass": "debug", "reject": "error"}
+        "level.limit": {"level": "debug"}
       },
-      "appenders": ["console1", "file1"]
+      "appenders": ["console", "sfiledev"]
     },
-    "testlogger2" : {
+    "loggerpublish" : {
       "params": {
       },
       "filters": {
-        "level.pass": {"pass": "debug", "reject": "error"}
+        "level.limit": {"level": "warn"}
       },
-      "appenders": ["discard1"]
+      "appenders": ["sfilepub"]
     }
   }
 }

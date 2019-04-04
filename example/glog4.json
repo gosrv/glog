@@ -1,0 +1,21 @@
+{
+  "writers" : {
+    "console":{
+      "writer":"console"
+    }
+  },
+  "appenders" : {
+    "console" : {
+      "appender":"writer",
+      "params": {
+        "writer":"console"
+      },
+      "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file}"
+    }
+  },
+  "loggers" : {
+    "logger" : {
+      "appenders": ["console"]
+    }
+  }
+}
