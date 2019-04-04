@@ -88,16 +88,13 @@ func (this *logFactoryBuilder) Build(cfg *ConfigLogRoot) ILogFactory {
 		for filterName, filterParam := range appenderCfg.Filters {
 			appender.AddFilter(this.CreateFilter(filterName, filterParam))
 		}
-		elements, err := this.layoutParser.LayoutParser(appenderCfg.Layout)
-		if err != nil {
-			panic(err)
-		}
-		elementFormaters := make([]IElementFormatter, 0, len(elements)-1)
-		for i := 1; i < len(elements); i++ {
-			ef := this.elementFormaterFactory[elements[i].Element].NewElementFormatter(elements[i].Param)
+		elements, format := this.layoutParser.LayoutParser([]byte(appenderCfg.Layout))
+		elementFormaters := make([]IElementFormatter, 0, len(elements))
+		for i := 0; i < len(elements); i++ {
+			ef := this.elementFormaterFactory[string(elements[i].Element)].NewElementFormatter(string(elements[i].Param))
 			elementFormaters = append(elementFormaters, ef)
 		}
-		layoutFormatter := this.layoutFormatterFactory.NewLayoutFormatter(elements[0].Element, elementFormaters)
+		layoutFormatter := this.layoutFormatterFactory.NewLayoutFormatter(format, elementFormaters)
 		if reflect.TypeOf(appender).AssignableTo(ILayoutFormatterAwareType) {
 			appender.(ILayoutFormatterAware).SetLayoutFormat(layoutFormatter)
 		}

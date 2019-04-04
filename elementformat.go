@@ -7,11 +7,11 @@ import (
 
 // 输出格式化
 type IElementFormatter interface {
-	ElementFormat(param *LogParam) string
+	ElementFormat(param *LogParam) []byte
 }
-type FuncElementFormat func(param *LogParam) string
+type FuncElementFormat func(param *LogParam) []byte
 
-func (this FuncElementFormat) ElementFormat(param *LogParam) string {
+func (this FuncElementFormat) ElementFormat(param *LogParam) []byte {
 	return this(param)
 }
 
@@ -32,23 +32,25 @@ func NewElementFormatDateTime(layout string) IElementFormatter {
 	return &ElementFormatDateTime{layout: layout}
 }
 
-func (this *ElementFormatDateTime) ElementFormat(param *LogParam) string {
+func (this *ElementFormatDateTime) ElementFormat(param *LogParam) []byte {
 	if len(this.layout) > 0 {
-		return time.Now().Format(this.layout)
+		return []byte(time.Now().Format(this.layout))
 	} else {
-		return time.Now().String()
+		data, _ := time.Now().MarshalBinary()
+		return data
 	}
 }
 
-func ElementFormatBody(param *LogParam) string {
+func ElementFormatBody(param *LogParam) []byte {
 	return param.body
 }
 
-func ElementFormatLevel(param *LogParam) string {
-	return param.level.String()
+func ElementFormatLevel(param *LogParam) []byte {
+	data, _ := param.level.MarshalText()
+	return data
 }
 
-func ElementFormatFields(param *LogParam) string {
+func ElementFormatFields(param *LogParam) []byte {
 	buf := make([]byte, 0, 512)
 	for _, field := range param.fields {
 		buf = append(buf, []byte(field.key)...)
@@ -56,5 +58,5 @@ func ElementFormatFields(param *LogParam) string {
 		buf = append(buf, []byte(fmt.Sprintf("%v", field.val))...)
 		buf = append(buf, ' ')
 	}
-	return string(buf)
+	return buf
 }

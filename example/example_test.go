@@ -2,6 +2,7 @@ package example
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gosrv/glog"
 	"testing"
 )
@@ -10,6 +11,14 @@ var cfg = `
 {
   "appenders" : {
     "discard" : {
+      "params": {
+      },
+      "filters": {
+        "level.limit": {"level": "debug"}
+      },
+      "layout": "{date:2006-01-02 15:04:05} [{level}] {body} {fields}"
+    },
+	"console" : {
       "params": {
       },
       "filters": {
@@ -25,7 +34,7 @@ var cfg = `
       "filters": {
         "level.pass": {"pass": "debug", "reject": "error"}
       },
-      "appenders": ["discard"]
+      "appenders": ["console"]
     }
   }
 }
@@ -53,4 +62,5 @@ func TestXX(t *testing.T) {
 	logger := factory.GetLogger("testlogger1")
 
 	logger.WithFields(glog.LF{"abc":123,"rrr":666}).Debug("hello")
+	fmt.Println("finish************")
 }

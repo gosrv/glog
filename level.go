@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type Level uint32
+type Level int
 
 func ToLevel(lvl string) (Level, error) {
 	switch strings.ToLower(lvl) {

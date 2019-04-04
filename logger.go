@@ -39,7 +39,7 @@ type LogParam struct {
 	fixFields []LogField
 	fields []LogField
 	level  Level
-	body   string
+	body   []byte
 }
 
 type LogField struct {
@@ -122,9 +122,9 @@ func (this *logger) Panic(format string, args ...interface{}) {
 
 func (this *logger) Log(level Level, format string, args ...interface{}) {
 	if len(args) > 0 {
-		this.LogParam.body = format
+		this.LogParam.body = []byte(format)
 	} else {
-		this.LogParam.body = fmt.Sprintf(format, args...)
+		this.LogParam.body = []byte(fmt.Sprintf(format, args...))
 	}
 	this.LogParam.level = level
 	if !this.FilterBundle.IsLogPass(&this.LogParam) {
