@@ -139,7 +139,7 @@ discard：丢弃
       "params": {
         "writer":"consoleWriterName"// writer的名字，这个名字必须在writers配置中存在
       },
-      // 输出日志的格式，有element组成
+      // 输出日志的格式，由element组成
       "layout": "[{logger}] [goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,short}"
     },
 ```
@@ -159,7 +159,7 @@ date:系统时间
 level:日志级别  
 fields:结构化日志项  
 file:日志所在的函数、文件、文件行号（比较耗费性能）  
-goid:go程的id  
+goid:go程的id(非常耗费性能）  
 logger:logger的名字  
 element可以自定义  
 
