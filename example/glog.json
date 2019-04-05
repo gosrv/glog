@@ -1,57 +1,57 @@
 {
   "writers" : {
-    "discard":{
+    "discardWriterName":{
       "writer":"discard"
     },
-    "console":{
+    "consoleWriterName":{
       "writer":"console"
     },
-    "sfiledev":{
+    "sfiledevWriterName":{
       "writer":"sfile",
       "path":"slog/logdev.log",
       "span":"1m"
     },
-    "sfilepub":{
+    "sfilepubWriterName":{
       "writer":"sfile",
       "path":"slog/logpub.log",
       "span":"1m"
     }
   },
   "appenders" : {
-    "discard" : {
+    "discardAppenderName" : {
       "appender":"writer",
       "params": {
-        "writer":"discard"
+        "writer":"discardWriterName"
       },
       "filters": {
         "level.limit": {"level": "debug"}
       },
       "layout": "[{logger}] [goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,short}"
     },
-    "console" : {
+    "consoleAppenderName" : {
       "appender":"writer",
       "params": {
-        "writer":"console"
+        "writer":"consoleWriterName"
       },
       "filters": {
         "level.limit": {"level": "debug"}
       },
       "layout": "[{logger}] [goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,short}"
     },
-    "sfiledev" : {
+    "sfiledevAppenderName" : {
       "appender":"writer",
       "params": {
-        "writer":"sfiledev"
+        "writer":"sfiledevWriterName"
       },
       "filters": {
         "level.limit": {"level": "debug"}
       },
       "layout": "[goid:{goid}] {date:2006-01-02 15:04:05} [{level}] {body} {fields} {file::,full}"
     },
-    "sfilepub" : {
+    "sfilepubAppenderName" : {
       "appender":"writer",
       "params": {
-        "writer":"sfilepub"
+        "writer":"sfilepubWriterName"
       },
       "filters": {
         "level.limit": {"level": "warn"}
@@ -66,7 +66,7 @@
       "filters": {
         "level.limit": {"level": "debug"}
       },
-      "appenders": ["console", "sfiledev"]
+      "appenders": ["consoleAppenderName", "sfiledevAppenderName"]
     },
     "loggerpublish" : {
       "params": {
@@ -74,7 +74,7 @@
       "filters": {
         "level.limit": {"level": "warn"}
       },
-      "appenders": ["sfilepub"]
+      "appenders": ["sfilepubAppenderName"]
     }
   }
 }
